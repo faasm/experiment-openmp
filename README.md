@@ -15,13 +15,15 @@ ICL.
 ./bin/cli.sh
 ```
 
-## Building Native
+## Native
 
 ```
 ./bin/build_native.sh
+
+./bin/run_native.sh
 ```
 
-## Building Wasm
+## Wasm
 
 ```
 ./bin/build_wasm.sh

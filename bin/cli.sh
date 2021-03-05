@@ -7,9 +7,9 @@ PROJ_ROOT=${THIS_DIR}/..
 
 pushd ${PROJ_ROOT} > /dev/null
 
-if [[ -z "${SYSROOT_CLI_IMAGE}" ]]; then
+if [[ -z "${COVID_CLI_IMAGE}" ]]; then
     VERSION=$(cat VERSION)
-    SYSROOT_CLI_IMAGE=faasm/cpp-sysroot:${VERSION}
+    COVID_CLI_IMAGE=faasm/experiment-covid:${VERSION}
 fi
 
 INNER_SHELL=${SHELL:-"/bin/bash"}

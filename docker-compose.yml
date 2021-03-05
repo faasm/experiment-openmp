@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  redis:
+      image: redis
+
+  cli:
+    image: ${COVID_CLI_IMAGE}
+    working_dir: /code/experiment
+    stdin_open: true
+    tty: true
+    privileged: true
+    depends_on:
+      - redis
+    environment:
+      - REDIS_QUEUE_HOST=redis
+      - REDIS_STATE_HOST=redis
+    volumes:
+      - .:/code/experiment
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker

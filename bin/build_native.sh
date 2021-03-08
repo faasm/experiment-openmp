@@ -2,16 +2,25 @@
 
 set -e
 
-pushd third-party/covid-sim
+PROJ_ROOT=$(pwd)
+COVID_DIR=${PROJ_ROOT}/third-party/covid-sim
 
-mkdir -p build
+if [[ -z "$FAASM_DOCKER" ]]; then
+    # Non-Docker
+    BUILD_DIR=third-party/covid-sim/build
+    echo "Non-Dockerised build of ${PROJ_ROOT}"
+else
+    # Docker
+    BUILD_DIR=/build/experiment
+    echo "Dockerised build of ${PROJ_ROOT}"
+fi
 
-pushd build
+mkdir -p ${BUILD_DIR}
 
-cmake .. -G Ninja
+pushd ${BUILD_DIR}
+
+cmake ${COVID_DIR} -G Ninja
 
 cmake --build . --target all
-
-popd
 
 popd

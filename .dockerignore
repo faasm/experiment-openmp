@@ -1,0 +1,9 @@
+# Builds
+build
+
+# Clang
+.clangd
+
+# Git
+.git
+

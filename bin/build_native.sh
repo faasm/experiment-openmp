@@ -33,12 +33,5 @@ if [ "${BASH_ARGV[0]}" == "--push" ]; then
     docker push faasm/${IMAGE_NAME}:${VERSION}
 fi
 
-mkdir -p ${BUILD_DIR}
+popd >> /dev/null
 
-pushd ${BUILD_DIR}
-
-cmake ${COVID_DIR} -G Ninja
-
-cmake --build . --target all
-
-popd

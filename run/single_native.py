@@ -2,7 +2,7 @@
 import os
 import re
 import sys
-from subprocess import check_output, PIPE, STDOUT
+from subprocess import check_output, STDOUT
 
 COVID_SIM_BUILD_PATH = "/build/experiment/src/CovidSim"
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -26,7 +26,7 @@ def run_single(country, num_omp_threads):
         country,
         "--covidsim {}".format(COVID_SIM_BUILD_PATH),
         "--threads {}".format(num_omp_threads),
-        "--outputdir /tmp/"
+        "--outputdir /tmp/",
     ]
     cmd = " ".join(_cmd)
     print(cmd)
@@ -38,7 +38,6 @@ def run_single(country, num_omp_threads):
     if COUNT_SETUP:
         exec_times += re.findall("Model setup in ([0-9.]*) seconds", _out)
     total_time = sum([float(val) for val in exec_times])
-    print(exec_times)
     print(total_time)
     print("------------------------------------------")
 

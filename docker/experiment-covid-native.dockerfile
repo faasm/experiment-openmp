@@ -12,4 +12,5 @@ WORKDIR /code/experiment-covid/
 RUN git submodule update --init
 RUN ./build/native.sh
 
-CMD ["/bin/bash"]
+# Prepare the entrypoint
+ENTRYPOINT ["/code/experiment-covid/run/single_native.py"]

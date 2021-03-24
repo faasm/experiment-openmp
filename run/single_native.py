@@ -8,7 +8,7 @@ COVID_SIM_BUILD_PATH = "/build/experiment/src/CovidSim"
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 SCRIPT_DIR = "{}/third-party/covid-sim/data".format(PROJ_ROOT)
 DATA_DIR = SCRIPT_DIR
-COUNT_SETUP = False
+NOT_COUNT_SETUP = True
 
 
 def run_single_python(country, num_omp_threads, debug):
@@ -127,8 +127,13 @@ def run_single_src(country, num_omp_threads, debug):
     if debug:
         print(_out)
     exec_times = re.findall("Model ran in ([0-9.]*) seconds", _out)
-    if COUNT_SETUP:
-        exec_times += re.findall("Model setup in ([0-9.]*) seconds", _out)
+    if NOT_COUNT_SETUP:
+        setup_times = re.findall("Model setup in ([0-9.]*) seconds", _out)
+        if (len(setup_times) != len(exec_times)):
+            print("Error: Mismatch between setup and run times")
+            sys.exit(1)
+        for i in range(len(exec_times)):
+            exec_times[i] = float(exec_times[i]) - float(setup_times[i])
     total_time = sum([float(val) for val in exec_times])
     print(total_time)
     print("------------------------------------------")

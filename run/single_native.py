@@ -2,15 +2,16 @@
 import os
 import re
 import sys
-from subprocess import check_output, STDOUT
+from subprocess import check_output, STDOUT, CalledProcessError
 
 COVID_SIM_BUILD_PATH = "/build/experiment/src/CovidSim"
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 SCRIPT_DIR = "{}/third-party/covid-sim/data".format(PROJ_ROOT)
+DATA_DIR = SCRIPT_DIR
 COUNT_SETUP = False
 
 
-def run_single(country, num_omp_threads, debug):
+def run_single_python(country, num_omp_threads, debug):
     """
     Run a single run_sample execution
     """
@@ -43,6 +44,77 @@ def run_single(country, num_omp_threads, debug):
     print("------------------------------------------")
 
 
+def clean_duplicates(country):
+    for f in [
+        "/tmp/{}_pop_density.bin".format(country),
+        "/tmp/Network_{}_T1_R3.0.bin".format(country),
+    ]:
+        try:
+            os.remove(f)
+        except FileNotFoundError:
+            continue
+
+
+"""
+Example Command Line script for a no intervention simulation
+    /build/experiment/src/CovidSim \
+        /c:1 \
+        /A:/code/experiment-covid/third-party/covid-sim/data/admin_units/Virgin_Islands_US_admin.txt \
+        /PP:/code/experiment-covid/third-party/covid-sim/data/param_files/preUK_R0=2.0.txt \
+        /P:/code/experiment-covid/third-party/covid-sim/data/param_files/p_NoInt.txt \
+        /O:/tmp/Virgin_Islands_US_NoInt_R0=3.0 \
+        /D:/tmp/wpop_us_terr.txt \
+        /M:/tmp/Virgin_Islands_US_pop_density.bin \
+        /S:/tmp/Network_Virgin_Islands_US_T1_R3.0.bin \
+        /R:1.5 98798150 729101 17389101 4797132
+"""
+
+
+def run_single_src(country, num_omp_threads, debug):
+    """
+    Run a single run_sample execution
+    """
+    print("CovidSim single execution w/ parameters:")
+    print("\t- BUILD_PATH: {}".format(COVID_SIM_BUILD_PATH))
+    print("\t- SCRIPT_DIR: {}".format(SCRIPT_DIR))
+    print("\t- Country: {}".format(country))
+    print("\t- Num. OMP Threads: {}".format(num_omp_threads))
+
+    # Prepare cmd
+    _cmd = [
+        COVID_SIM_BUILD_PATH,
+        "/c:{}".format(num_omp_threads),
+        "/A:{}/admin_units/{}_admin.txt".format(DATA_DIR, country),
+        "/PP:{}/param_files/preUK_R0=2.0.txt".format(DATA_DIR),
+        "/P:{}/param_files/p_NoInt.txt".format(DATA_DIR),
+        "/O:/tmp/{}_NoInt_R0=3.0".format(country),
+        "/D:/tmp/wpop_us_terr.txt",
+        "/M:/tmp/{}_pop_density.bin".format(country),
+        "/S:/tmp/Network_{}_T1_R3.0.bin".format(country),
+        "/R:1.5 98798150 729101 17389101 4797132",
+    ]
+    cmd = " ".join(_cmd)
+    print(cmd)
+
+    # Simulator complains if output files already exist, so we clean them
+    clean_duplicates(country)
+
+    # Run and check_output and handle errors
+    try:
+        _out = check_output(cmd, shell=True, stderr=STDOUT).decode("utf-8")
+    except CalledProcessError as e:
+        clean_duplicates(country)
+        raise e
+    if debug:
+        print(_out)
+    exec_times = re.findall("Model ran in ([0-9.]*) seconds", _out)
+    if COUNT_SETUP:
+        exec_times += re.findall("Model setup in ([0-9.]*) seconds", _out)
+    total_time = sum([float(val) for val in exec_times])
+    print(total_time)
+    print("------------------------------------------")
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print(
@@ -51,4 +123,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     debug = (len(sys.argv) >= 4) and (sys.argv[3] == "--debug")
-    run_single(sys.argv[1], int(sys.argv[2]), debug)
+    run_single_src(sys.argv[1], int(sys.argv[2]), debug)

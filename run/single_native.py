@@ -10,7 +10,7 @@ SCRIPT_DIR = "{}/third-party/covid-sim/data".format(PROJ_ROOT)
 COUNT_SETUP = False
 
 
-def run_single(country, num_omp_threads):
+def run_single(country, num_omp_threads, debug):
     """
     Run a single run_sample execution
     """
@@ -33,7 +33,8 @@ def run_single(country, num_omp_threads):
 
     # Run and check_output
     _out = check_output(cmd, shell=True, stderr=STDOUT).decode("utf-8")
-    # print(_out)
+    if debug:
+        print(_out)
     exec_times = re.findall("Model ran in ([0-9.]*) seconds", _out)
     if COUNT_SETUP:
         exec_times += re.findall("Model setup in ([0-9.]*) seconds", _out)
@@ -44,6 +45,10 @@ def run_single(country, num_omp_threads):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Two positional arguments required: <country> and <num-threads>")
+        print(
+            "Two positional arguments required: <country> and <num-threads> (and --debug)"
+        )
         sys.exit(1)
-    run_single(sys.argv[1], int(sys.argv[2]))
+
+    debug = (len(sys.argv) >= 4) and (sys.argv[3] == "--debug")
+    run_single(sys.argv[1], int(sys.argv[2]), debug)

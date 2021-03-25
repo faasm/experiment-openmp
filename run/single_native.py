@@ -72,7 +72,7 @@ Example Command Line script for a no intervention simulation
 
 def run_single_src(country, num_omp_threads, debug):
     """
-    Run a single run_sample execution
+    Run a single CovidSim execution
     """
     print("CovidSim single execution w/ parameters:")
     print("\t- BUILD_PATH: {}".format(COVID_SIM_BUILD_PATH))

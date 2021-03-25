@@ -80,11 +80,18 @@ def run_single_src(country, num_omp_threads, debug):
     print("\t- Country: {}".format(country))
     print("\t- Num. OMP Threads: {}".format(num_omp_threads))
 
-    # Bit copied from the original source 
+    # Bit copied from the original source
     # Lists of places that need to be handled specially
-    united_states = [ "United_States" ]
-    canada = [ "Canada" ]
-    usa_territories = ["Alaska", "Hawaii", "Guam", "Virgin_Islands_US", "Puerto_Rico", "American_Samoa"]
+    united_states = ["United_States"]
+    canada = ["Canada"]
+    usa_territories = [
+        "Alaska",
+        "Hawaii",
+        "Guam",
+        "Virgin_Islands_US",
+        "Puerto_Rico",
+        "American_Samoa",
+    ]
     nigeria = ["Nigeria"]
     # Population density file in gziped form, text file, and binary file as
     # processed by CovidSim
@@ -129,7 +136,7 @@ def run_single_src(country, num_omp_threads, debug):
     exec_times = re.findall("Model ran in ([0-9.]*) seconds", _out)
     if NOT_COUNT_SETUP:
         setup_times = re.findall("Model setup in ([0-9.]*) seconds", _out)
-        if (len(setup_times) != len(exec_times)):
+        if len(setup_times) != len(exec_times):
             print("Error: Mismatch between setup and run times")
             sys.exit(1)
         for i in range(len(exec_times)):

@@ -14,7 +14,7 @@ with open(os.path.join(BASE_DIR, "VERSION")) as version_file:
 RESULTS_FILE = "{}/results/covid/covid_native.dat".format(BASE_DIR)
 
 # Benchmark parameters
-COUNTRY = "Guam"
+COUNTRY = "Malta"
 NUM_CORES = cpu_count()
 NUM_POINTS = 10
 NUM_RUNS = 3

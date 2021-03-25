@@ -15,36 +15,7 @@ This tutorial assumes that this repository is cloned as a submodule of
 ./run/native.sh
 ```
 
-### Faasm
+## To-Do
 
-```bash
-./bin/build_faasm.sh
-./run/faasm.sh
-```
-
-## Build Container
-
-```
-./bin/build_container.sh
-```
-
-## Development
-
-```
-./bin/cli.sh
-```
-
-## Native
-
-```
-./bin/build_native.sh
-
-./bin/run_native.sh
-```
-
-## Wasm
-
-```
-./bin/build_wasm.sh
-```
++ Prepare `faasm` experiments
 

@@ -12,6 +12,14 @@ The data must be unzipped using:
 inv native.unzip
 ```
 
+## Commandline
+
+To see what tasks are available, run:
+
+```bash
+inv -l
+```
+
 ## Example Invocation
 
 Whilst the experiment is under development, nice to have a reminder of a sample

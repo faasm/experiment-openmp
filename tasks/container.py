@@ -9,6 +9,9 @@ IMAGE_NAME = "experiment-covid"
 
 @task(default=True)
 def build(ctx, nocache=False, push=False):
+    """
+    Build the container image used for this experiment
+    """
     shell_env = copy(environ)
     shell_env["DOCKER_BUILDKIT"] = "1"
 

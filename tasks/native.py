@@ -8,6 +8,9 @@ from subprocess import run
 
 @task(default=True)
 def build(ctx, clean=False):
+    """
+    Build the native binary
+    """
     if clean and exists(BUILD_DIR):
         rmtree(BUILD_DIR)
 
@@ -25,6 +28,9 @@ def build(ctx, clean=False):
 
 @task
 def unzip(ctx):
+    """
+    Unzip compressed data from the Covid repo
+    """
     files = [
         "wpop_eur.txt",
         "wpop_nga_adm1.txt",
@@ -35,7 +41,6 @@ def unzip(ctx):
     pop_dir = join(DATA_DIR, "populations")
 
     for f in files:
-        target = join(pop_dir, f)
         if exists(f):
             print("Skipping {}, already unzipped".format(f))
             continue

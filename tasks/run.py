@@ -36,6 +36,9 @@ NIGERIA = ["Nigeria"]
 
 @task
 def native(local=True, country=DEFAULT_COUNTRY):
+    """
+    Runs the native experiment
+    """
     if not local:
         print("Remote not yet implemented")
         exit(1)

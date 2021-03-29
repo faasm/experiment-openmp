@@ -19,7 +19,7 @@ def build(ctx, nocache=False, push=False):
     cmd = [
         "docker",
         "build",
-        "--nocache" if nocache else "",
+        "--no-cache" if nocache else "",
         "--build-arg EXPERIMENTS_VERSION={}".format(base_ver),
         "-t {}".format(img_tag),
         ".",

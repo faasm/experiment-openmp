@@ -10,6 +10,7 @@ This repository should be used as a submodule of
 
 Whilst the experiment is under development, nice to have a reminder of a sample
 command line invocation of the simulator:
+
 ```
 /build/experiment/src/CovidSim \
       /c:1 \

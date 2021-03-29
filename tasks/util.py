@@ -5,6 +5,7 @@ PROJ_ROOT = dirname(dirname(realpath(__file__)))
 COVID_DIR = join(PROJ_ROOT, "third-party", "covid-sim")
 
 EXPERIMENTS_BASE_DIR = dirname(dirname(PROJ_ROOT))
+RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "covid")
 
 
 def get_experiments_base_version():

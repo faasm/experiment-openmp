@@ -55,21 +55,6 @@ def clean_duplicates(country):
             continue
 
 
-"""
-Example Command Line script for a no intervention simulation
-    /build/experiment/src/CovidSim \
-        /c:1 \
-        /A:/code/experiment-covid/third-party/covid-sim/data/admin_units/Virgin_Islands_US_admin.txt \
-        /PP:/code/experiment-covid/third-party/covid-sim/data/param_files/preUK_R0=2.0.txt \
-        /P:/code/experiment-covid/third-party/covid-sim/data/param_files/p_NoInt.txt \
-        /O:/tmp/Virgin_Islands_US_NoInt_R0=3.0 \
-        /D:/tmp/wpop_us_terr.txt \
-        /M:/tmp/Virgin_Islands_US_pop_density.bin \
-        /S:/tmp/Network_Virgin_Islands_US_T1_R3.0.bin \
-        /R:1.5 98798150 729101 17389101 4797132
-"""
-
-
 def run_single_src(country, num_omp_threads, debug):
     """
     Run a single CovidSim execution

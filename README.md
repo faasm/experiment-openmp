@@ -3,22 +3,24 @@
 Based on the [Covid microsimulation](https://github.com/mrc-ide/covid-sim) from
 ICL. 
 
-## Quick Start
-
-This tutorial assumes that this repository is cloned as a submodule of
+This repository should be used as a submodule of 
 [faasm/experiment-base](https://github.com/faasm/experiment-base).
 
-### Native
+The container image used for these experiments is
+[`faasm/experiment-covid`](https://hub.docker.com/repository/docker/faasm/experiment-lammps).
 
-```bash
-./bin/build_native.sh
-./run/native.sh
+## Commandline
+
 ```
+# Build the container
+inv container
 
-## To-Do
+# Build to wasm
+inv wasm
 
-+ Prepare `faasm` experiments.
-+ Migrate to one single container.
+# Build native
+inv native
+```
 
 ## Example Invocation
 

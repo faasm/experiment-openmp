@@ -6,6 +6,12 @@ ICL.
 This repository should be used as a submodule of 
 [faasm/experiment-base](https://github.com/faasm/experiment-base).
 
+The data must be unzipped using:
+
+```bash
+inv native.unzip
+```
+
 ## Example Invocation
 
 Whilst the experiment is under development, nice to have a reminder of a sample

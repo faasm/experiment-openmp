@@ -1,11 +1,9 @@
 from invoke import task
-from tasks.util import COVID_DIR
+from tasks.util import COVID_DIR, BUILD_DIR, DATA_DIR
 from os import makedirs
-from os.path import exists
+from os.path import exists, join
 from shutil import rmtree
 from subprocess import run
-
-BUILD_DIR = "/build/experiment"
 
 
 @task(default=True)
@@ -23,3 +21,28 @@ def build(ctx, clean=False):
     )
 
     run("cmake --build . --target all", shell=True, check=True, cwd=BUILD_DIR)
+
+
+@task
+def unzip(ctx):
+    files = [
+        "wpop_eur.txt",
+        "wpop_nga_adm1.txt",
+        "wpop_us_terr.txt",
+        "wpop_usacan.txt",
+    ]
+
+    pop_dir = join(DATA_DIR, "populations")
+
+    for f in files:
+        target = join(pop_dir, f)
+        if exists(f):
+            print("Skipping {}, already unzipped".format(f))
+            continue
+
+        run(
+            "gunzip -c {}.gz > {}".format(f, f),
+            shell=True,
+            check=True,
+            cwd=pop_dir,
+        )

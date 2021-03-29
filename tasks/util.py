@@ -3,6 +3,8 @@ from os.path import dirname, realpath, expanduser, join, exists
 HOME_DIR = expanduser("~")
 PROJ_ROOT = dirname(dirname(realpath(__file__)))
 COVID_DIR = join(PROJ_ROOT, "third-party", "covid-sim")
+DATA_DIR = join(COVID_DIR, "data")
+BUILD_DIR = join(PROJ_ROOT, "build", "native")
 
 EXPERIMENTS_BASE_DIR = dirname(dirname(PROJ_ROOT))
 RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "covid")

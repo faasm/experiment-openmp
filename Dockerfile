@@ -13,12 +13,8 @@ WORKDIR /code/experiment-covid
 RUN git checkout wasm-build
 RUN git submodule update --init
 
-# Unzip and copy population files
-WORKDIR /code/experiment-covid/third-party/covid-sim/data/populations
-RUN gunzip -c wpop_us_terr.txt.gz > /tmp/wpop_us_terr.txt 
-RUN gunzip -c wpop_eur.txt.gz > /tmp/wpop_eur.txt 
-RUN gunzip -c wpop_usacan.txt.gz > /tmp/wpop_usacan.txt 
-WORKDIR /code/experiment-covid
+# Prepare data
+RUN inv native.unzip
 
 # WebAssembly build
 RUN inv wasm

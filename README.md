@@ -6,22 +6,6 @@ ICL.
 This repository should be used as a submodule of 
 [faasm/experiment-base](https://github.com/faasm/experiment-base).
 
-The container image used for these experiments is
-[`faasm/experiment-covid`](https://hub.docker.com/repository/docker/faasm/experiment-lammps).
-
-## Commandline
-
-```
-# Build the container
-inv container
-
-# Build to wasm
-inv wasm
-
-# Build native
-inv native
-```
-
 ## Example Invocation
 
 Whilst the experiment is under development, nice to have a reminder of a sample

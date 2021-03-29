@@ -1,31 +1,29 @@
 ARG EXPERIMENTS_VERSION
+FROM faasm/cpp-sysroot:0.0.22 as toolchain
 
-FROM faasm/cpp-sysroot:0.0.22 as build-step
-
-# Clone the code
-RUN git clone https://github.com/faasm/experiment-covid /code/experiment
-RUN git submodule update --init
-WORKDIR /code/experiment
-
-# WebAssembly build
-RUN ./build/wasm.sh
-
-# New container from experiments-base
+ARG EXPERIMENTS_VERSION
 FROM faasm/experiment-base:${EXPERIMENTS_VERSION} as experiments
 
-RUN apt update
+# Copy in toolchain
+COPY --from=toolchain /usr/local/faasm /usr/local/faasm
 
-# Copy in artifacts from build
-COPY --from=build-step /code/experiment /code/experiment
-
-# Native build
-RUN ./build/native.sh
+# Clone the code
+RUN git clone https://github.com/faasm/experiment-covid /code/experiment-covid
+WORKDIR /code/experiment-covid
+RUN git checkout wasm-build
+RUN git submodule update --init
 
 # Unzip and copy population files
-WORKDIR /code/experiment/third-party/covid-sim/data/populations
+WORKDIR /code/experiment-covid/third-party/covid-sim/data/populations
 RUN gunzip -c wpop_us_terr.txt.gz > /tmp/wpop_us_terr.txt 
 RUN gunzip -c wpop_eur.txt.gz > /tmp/wpop_eur.txt 
 RUN gunzip -c wpop_usacan.txt.gz > /tmp/wpop_usacan.txt 
-WORKDIR /code/experiment
+WORKDIR /code/experiment-covid
+
+# WebAssembly build
+RUN inv wasm
+
+# Native build
+RUN inv native
 
 CMD ["/bin/bash"]

@@ -1,6 +1,6 @@
 from invoke import task
 
 
-@task
+@task(default=True)
 def build(ctx):
-    pass
+    print("This would be the wasm build")

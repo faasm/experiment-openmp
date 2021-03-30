@@ -172,19 +172,17 @@ def faasm(ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY):
                 "cmdline": " ".join(cmdline_args),
             }
 
-            print(msg)
+            # Invoke
+            response = requests.post(url, json=msg)
+            print(
+                "Response {}:\n{}".format(response.status_code, response.text)
+            )
 
-            ## Invoke
-            # response = requests.post(url, json=msg)
-            # print(
-            #    "Response {}:\n{}".format(response.status_code, response.text)
-            # )
-
-            ## Write outputs
-            # total_time = parse_output(response.text)
-            # write_result_line(
-            #    WASM_RESULTS_FILE, country, n_threads, run_idx, total_time
-            # )
+            # Write outputs
+            total_time = parse_output(response.text)
+            write_result_line(
+                WASM_RESULTS_FILE, country, n_threads, run_idx, total_time
+            )
 
 
 @task

@@ -10,4 +10,4 @@ ns = Collection(
     native,
     run,
     wasm,
-    )
+)

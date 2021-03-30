@@ -2,11 +2,11 @@ from invoke import task
 from multiprocessing import cpu_count
 from subprocess import run, PIPE, STDOUT
 from os.path import join, exists
-from tasks.util import RESULTS_DIR, COVID_DIR, BUILD_DIR
+from tasks.util import RESULTS_DIR, COVID_DIR, NATIVE_BUILD_DIR
 import os
 import re
 
-COVID_SIM_EXE = join(BUILD_DIR, "src", "CovidSim")
+COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
 
 IMAGE_NAME = "experiment-covid"

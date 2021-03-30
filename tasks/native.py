@@ -1,5 +1,5 @@
 from invoke import task
-from tasks.util import COVID_DIR, BUILD_DIR, DATA_DIR
+from tasks.util import COVID_DIR, NATIVE_BUILD_DIR, DATA_DIR
 from os import makedirs
 from os.path import exists, join
 from shutil import rmtree
@@ -11,19 +11,24 @@ def build(ctx, clean=False):
     """
     Build the native binary
     """
-    if clean and exists(BUILD_DIR):
-        rmtree(BUILD_DIR)
+    if clean and exists(NATIVE_BUILD_DIR):
+        rmtree(NATIVE_BUILD_DIR)
 
-    makedirs(BUILD_DIR, exist_ok=True)
+    makedirs(NATIVE_BUILD_DIR, exist_ok=True)
 
     run(
         "cmake -G Ninja {}".format(COVID_DIR),
         shell=True,
         check=True,
-        cwd=BUILD_DIR,
+        cwd=NATIVE_BUILD_DIR,
     )
 
-    run("cmake --build . --target all", shell=True, check=True, cwd=BUILD_DIR)
+    run(
+        "cmake --build . --target all",
+        shell=True,
+        check=True,
+        cwd=NATIVE_BUILD_DIR,
+    )
 
 
 @task

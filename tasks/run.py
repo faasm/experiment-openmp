@@ -17,7 +17,7 @@ import re
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
 
-FAASM_LOCAL_SHARED_STORE = "/usr/local/faasm/shared_store"
+FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared_store/covid"
 FAASM_DATA_DIR = "faasm://covid"
 
 IMAGE_NAME = "experiment-covid"
@@ -131,7 +131,7 @@ def upload_data(
             print("Copying {} locally".format(relative_path))
 
             # Create directory if not exists
-            dest_file = join(FAASM_LOCAL_SHARED_STORE, relative_path)
+            dest_file = join(FAASM_LOCAL_SHARED_DIR, relative_path)
             dest_dir = dirname(dest_file)
             makedirs(dest_dir, exist_ok=True)
 

@@ -1,5 +1,5 @@
 ARG EXPERIMENTS_VERSION
-FROM faasm/cpp-sysroot:0.0.22 as toolchain
+FROM faasm/cpp-sysroot:0.0.23 as toolchain
 
 ARG EXPERIMENTS_VERSION
 FROM faasm/experiment-base:${EXPERIMENTS_VERSION} as experiments

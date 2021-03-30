@@ -21,7 +21,9 @@ def build(ctx, clean=False):
     cmake_cmd = [
         "cmake",
         "-GNinja",
+        "-DCMAKE_BUILD_TYPE=Release",
         "-DCMAKE_TOOLCHAIN_FILE={}".format(CMAKE_TOOLCHAIN_FILE),
+        "-DFAASM_COVID=ON",
         COVID_DIR,
     ]
     cmake_cmd_str = " ".join(cmake_cmd)

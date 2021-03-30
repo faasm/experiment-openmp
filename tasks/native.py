@@ -16,8 +16,15 @@ def build(ctx, clean=False):
 
     makedirs(NATIVE_BUILD_DIR, exist_ok=True)
 
+    cmake_cmd = [
+        "cmake",
+        "-G Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        COVID_DIR,
+    ]
+
     run(
-        "cmake -G Ninja {}".format(COVID_DIR),
+        " ".join(cmake_cmd),
         shell=True,
         check=True,
         cwd=NATIVE_BUILD_DIR,

@@ -22,8 +22,12 @@ inv -l
 
 ## Example Invocation
 
-Whilst the experiment is under development, nice to have a reminder of a sample
-command line invocation of the simulator:
+The commandline arguments for the CovidSim executable are quite long and fiddly,
+here are two examples:
+
+### Native
+
+For US Virgin Islands
 
 ```
 /build/experiment/src/CovidSim \
@@ -38,3 +42,22 @@ command line invocation of the simulator:
       /R:1.5 98798150 729101 17389101 4797132
 ```
 
+### Faasm
+
+For Guam
+
+```
+{
+    'user': 'cov', 
+    'function': 'sim', 
+    'cmdline': '/c:20                                       \
+        /A:faasm://covid/admin_units/Guam_admin.txt        \
+        /PP:faasm://covid/param_files/preUK_R0=2.0.txt     \
+        /P:faasm://covid/param_files/p_NoInt.txt           \
+        /O:/tmp/Guam_NoInt_R0=3.0                           \
+        /D:/faasm://covid/populations/wpop_us_terr.txt     \
+        /M:/tmp/Guam_pop_density.bin                        \
+        /S:/tmp/Network_Guam_T1_R3.0.bin                    \
+        /R:1.5 98798150 729101 17389101 4797132'
+}
+```

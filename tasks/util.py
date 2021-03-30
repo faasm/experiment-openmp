@@ -8,7 +8,16 @@ NATIVE_BUILD_DIR = join(PROJ_ROOT, "build", "native")
 WASM_BUILD_DIR = join(PROJ_ROOT, "build", "wasm")
 
 EXPERIMENTS_BASE_DIR = dirname(dirname(PROJ_ROOT))
-RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "covid")
+
+FAASM_USER = "cov"
+FAASM_FUNC = "sim"
+
+IS_DOCKER = HOME_DIR.startswith("/root")
+
+if IS_DOCKER:
+    RESULTS_DIR = join(PROJ_ROOT, "results")
+else:
+    RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "covid")
 
 
 def get_experiments_base_version():

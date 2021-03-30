@@ -1,18 +1,34 @@
 from invoke import task
 from multiprocessing import cpu_count
 from subprocess import run, PIPE, STDOUT
-from os.path import join, exists
-from tasks.util import RESULTS_DIR, COVID_DIR, NATIVE_BUILD_DIR
-import os
+from os.path import join, exists, dirname
+from tasks.util import (
+    RESULTS_DIR,
+    COVID_DIR,
+    NATIVE_BUILD_DIR,
+    FAASM_USER,
+    FAASM_FUNC,
+)
+from os import makedirs, remove
+from shutil import copyfile
+import requests
 import re
 
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
 
-IMAGE_NAME = "experiment-covid"
-RESULTS_FILE = join(RESULTS_DIR, "covid_native.csv")
+FAASM_LOCAL_SHARED_STORE = "/usr/local/faasm/shared_store"
+FAASM_DATA_DIR = "faasm://covid"
 
-DEFAULT_COUNTRY = "Malta"
+IMAGE_NAME = "experiment-covid"
+
+NATIVE_RESULTS_FILE = join(RESULTS_DIR, "covid_native.csv")
+WASM_RESULTS_FILE = join(RESULTS_DIR, "covid_wasm.csv")
+
+# Countries in order of size:
+# - Guam
+# - Malta
+DEFAULT_COUNTRY = "Guam"
 NUM_CORES = cpu_count()
 NUM_REPEATS = 3
 
@@ -34,48 +50,7 @@ NIGERIA = ["Nigeria"]
 # -----------------------------------
 
 
-@task
-def native(local=True, country=DEFAULT_COUNTRY):
-    """
-    Runs the native experiment
-    """
-    if not local:
-        print("Remote not yet implemented")
-        exit(1)
-
-    # Write header to results
-    with open(RESULTS_FILE, "w") as out_file:
-        out_file.write("Country,Threads,Run,Time(s)\n")
-
-    # Run experiments
-    for n_threads in range(1, NUM_CORES + 1):
-        print("Running {} with {} threads".format(country, n_threads))
-
-        for run_idx in range(NUM_REPEATS):
-            this_time = run_country_sim(country, n_threads)
-            print("Run {}: {}".format(run_idx, this_time))
-
-            with open(RESULTS_FILE, "a") as out_file:
-                result_line = "{},{},{},{}\n".format(
-                    country, n_threads, run_idx, this_time
-                )
-                out_file.write(result_line)
-
-            print("Run {}/{} finished!".format(run_idx, NUM_REPEATS))
-
-
-def clean_duplicates(country):
-    files = [
-        "/tmp/{}_pop_density.bin".format(country),
-        "/tmp/Network_{}_T1_R3.0.bin".format(country),
-    ]
-
-    for f in files:
-        if exists(f):
-            os.remove(f)
-
-
-def run_country_sim(country, n_threads):
+def get_wpop_filename(country):
     # Work out population file
     if country in UNITED_STATES + CANADA:
         wpop_file_root = "usacan"
@@ -87,31 +62,191 @@ def run_country_sim(country, n_threads):
         wpop_file_root = "eur"
 
     wpop_file = "wpop_{}.txt".format(wpop_file_root)
+    return wpop_file
 
-    # Prepare cmd
-    cmd = [
-        COVID_SIM_EXE,
+
+def get_data_files(country):
+    """
+    Lists data files that must be available to the application, with paths
+    relative to the data dir
+    """
+    wpop_file = get_wpop_filename(country)
+
+    files = [
+        "admin_units/{}_admin.txt".format(country),
+        "param_files/preUK_R0=2.0.txt",
+        "param_files/p_NoInt.txt",
+        "populations/{}".format(wpop_file),
+    ]
+    return files
+
+
+def get_cmdline_args(country, n_threads, data_dir):
+    wpop_file = get_wpop_filename(country)
+
+    return [
         "/c:{}".format(n_threads),
-        "/A:{}/admin_units/{}_admin.txt".format(DATA_DIR, country),
-        "/PP:{}/param_files/preUK_R0=2.0.txt".format(DATA_DIR),
-        "/P:{}/param_files/p_NoInt.txt".format(DATA_DIR),
+        "/A:{}/admin_units/{}_admin.txt".format(data_dir, country),
+        "/PP:{}/param_files/preUK_R0=2.0.txt".format(data_dir),
+        "/P:{}/param_files/p_NoInt.txt".format(data_dir),
         "/O:/tmp/{}_NoInt_R0=3.0".format(country),
-        "/D:/{}/populations/{}".format(DATA_DIR, wpop_file),
+        "/D:/{}/populations/{}".format(data_dir, wpop_file),
         "/M:/tmp/{}_pop_density.bin".format(country),
         "/S:/tmp/Network_{}_T1_R3.0.bin".format(country),
         "/R:1.5 98798150 729101 17389101 4797132",
     ]
-    cmd_str = " ".join(cmd)
-    print(cmd_str)
 
-    # Simulator complains if output files already exist, so we clean them
-    clean_duplicates(country)
 
-    # Run the command
-    cmd_res = run(cmd_str, shell=True, check=True, stdout=PIPE, stderr=STDOUT)
-    cmd_out = cmd_res.stdout.decode("utf-8")
-    print(cmd_out)
+def write_csv_header(result_file):
+    makedirs(RESULTS_DIR, exist_ok=True)
+    with open(result_file, "w") as out_file:
+        out_file.write("Country,Threads,Run,Time(s)\n")
 
+
+def write_result_line(result_file, country, n_threads, run_idx, total_time):
+    with open(result_file, "a") as out_file:
+        result_line = "{},{},{},{}\n".format(
+            country, n_threads, run_idx, total_time
+        )
+        out_file.write(result_line)
+
+
+@task
+def upload_data(
+    ctx, local=True, host="faasm", port=8002, country=DEFAULT_COUNTRY
+):
+    """
+    Uploads the data files needed for Covid sim
+    """
+
+    files = get_data_files(country)
+
+    for relative_path in files:
+        local_file_path = join(DATA_DIR, relative_path)
+
+        if local:
+            print("Copying {} locally".format(relative_path))
+
+            # Create directory if not exists
+            dest_file = join(FAASM_LOCAL_SHARED_STORE, relative_path)
+            dest_dir = dirname(dest_file)
+            makedirs(dest_dir, exist_ok=True)
+
+            # Do the copy
+            copyfile(local_file_path, dest_file)
+        else:
+            print("Uploading {} as a shared file".format(relative_path))
+            url = "http://{}:{}/file"
+
+            response = requests.put(
+                url,
+                data=open(local_file_path, "rb"),
+                headers={"FilePath": relative_path},
+            )
+
+            print(
+                "Response {}: {}".format(response.status_code, response.text)
+            )
+
+
+@task
+def faasm(ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY):
+    """
+    Runs the faasm experiment
+    """
+    url = "http://{}:{}".format(host, port)
+
+    write_csv_header(WASM_RESULTS_FILE)
+
+    # Run experiments
+    for n_threads in range(1, NUM_CORES + 1):
+        print("Running {} with {} threads".format(country, n_threads))
+
+        for run_idx in range(NUM_REPEATS):
+            cmdline_args = get_cmdline_args(country, n_threads, FAASM_DATA_DIR)
+
+            # Build message data
+            msg = {
+                "user": FAASM_USER,
+                "function": FAASM_FUNC,
+                "cmdline": " ".join(cmdline_args),
+            }
+
+            print(msg)
+
+            ## Invoke
+            # response = requests.post(url, json=msg)
+            # print(
+            #    "Response {}:\n{}".format(response.status_code, response.text)
+            # )
+
+            ## Write outputs
+            # total_time = parse_output(response.text)
+            # write_result_line(
+            #    WASM_RESULTS_FILE, country, n_threads, run_idx, total_time
+            # )
+
+
+@task
+def native(ctx, local=True, country=DEFAULT_COUNTRY):
+    """
+    Runs the native experiment
+    """
+    if not local:
+        print("Remote not yet implemented")
+        exit(1)
+
+    write_csv_header(NATIVE_RESULTS_FILE)
+
+    # Run experiments
+    for n_threads in range(1, NUM_CORES + 1):
+        print("Running {} with {} threads".format(country, n_threads))
+
+        for run_idx in range(NUM_REPEATS):
+            cmdline_args = get_cmdline_args(country, n_threads, DATA_DIR)
+
+            # Prepare cmd
+            cmd = [COVID_SIM_EXE]
+            cmd.extend(cmdline_args)
+            cmd_str = " ".join(cmd)
+            print(cmd_str)
+
+            # Simulator complains if output files already exist
+            clean_duplicates(country)
+
+            # Run the command
+            cmd_res = run(
+                cmd_str, shell=True, check=True, stdout=PIPE, stderr=STDOUT
+            )
+            cmd_out = cmd_res.stdout.decode("utf-8")
+
+            # Parse the output
+            this_time = parse_output(cmd_out)
+
+            # Record the result
+            write_result_line(
+                NATIVE_RESULTS_FILE, country, n_threads, run_idx, this_time
+            )
+
+            print(
+                "{} {} threads, run {}/{}: {}".format(
+                    country, n_threads, run_idx, NUM_REPEATS, this_time
+                )
+            )
+
+
+def clean_duplicates(country):
+    files = [
+        "/tmp/{}_pop_density.bin".format(country),
+        "/tmp/Network_{}_T1_R3.0.bin".format(country),
+    ]
+
+    for f in files:
+        if exists(f):
+            remove(f)
+
+
+def parse_output(cmd_out):
     # Extract run/ setup times form output
     exec_times = re.findall("Model ran in ([0-9.]*) seconds", cmd_out)
     setup_times = re.findall("Model setup in ([0-9.]*) seconds", cmd_out)
@@ -123,10 +258,5 @@ def run_country_sim(country, n_threads):
         exec_times[i] = float(exec_time) - float(setup_time)
 
     total_time = sum(exec_times)
-    print(
-        "{} with {} threads took {:.2f}s".format(
-            country, n_threads, total_time
-        )
-    )
 
     return total_time

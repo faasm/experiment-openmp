@@ -1,13 +1,12 @@
 from invoke import task
+import requests
 from shutil import rmtree, copyfile
 from os.path import exists, join
 from os import makedirs
-from tasks.util import COVID_DIR, WASM_BUILD_DIR
+from tasks.util import COVID_DIR, WASM_BUILD_DIR, FAASM_USER, FAASM_FUNC
 from subprocess import run
 
 CMAKE_TOOLCHAIN_FILE = "/usr/local/faasm/toolchain/tools/WasiToolchain.cmake"
-FAASM_USER = "cov"
-FAASM_FUNC = "sim"
 
 
 @task(default=True)
@@ -44,15 +43,17 @@ def build(ctx, clean=False):
 
 
 @task
-def upload(ctx, local=False):
+def upload(ctx, host="faasm", port=8002, local=False):
     wasm_file = join(WASM_BUILD_DIR, "src", "CovidSim")
 
-    if not local:
-        print("Remote upload not implemented yet")
-        exit(1)
+    if local:
+        dest_dir = "/usr/local/faasm/wasm/{}/{}".format(FAASM_USER, FAASM_FUNC)
+        makedirs(dest_dir, exist_ok=True)
 
-    dest_dir = "/usr/local/faasm/wasm/{}/{}".format(FAASM_USER, FAASM_FUNC)
-    makedirs(dest_dir, exist_ok=True)
+        dest_file = join(dest_dir, "function.wasm")
+        copyfile(wasm_file, dest_file)
+    else:
+        url = "http://{}:{}/f/{}/{}".format(host, port, FAASM_USER, FAASM_FUNC)
+        response = requests.put(url, data=open(wasm_file, "rb"))
 
-    dest_file = join(dest_dir, "function.wasm")
-    copyfile(wasm_file, dest_file)
+        print("Response {}: {}".format(response.status_code, response.text))

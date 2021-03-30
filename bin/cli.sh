@@ -2,25 +2,34 @@
 
 set -e
 
-THIS_DIR=$(dirname $(readlink -f $0))
+THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJ_ROOT=${THIS_DIR}/..
 
 pushd ${PROJ_ROOT} > /dev/null
 
-if [[ -z "${COVID_CLI_IMAGE}" ]]; then
-    VERSION=$(cat VERSION)
-    COVID_CLI_IMAGE=faasm/experiment-covid:${VERSION}
+export VERSION=$(cat ../../VERSION)
+
+if [[ -z "$FAASM_LOCAL_DIR" ]]; then
+    echo "You must set your local /usr/local/faasm dir through FAASM_LOCAL_DIR"
+    exit 1
+fi
+
+if [[ -z "$COVID_CLI_IMAGE" ]]; then
+    export COVID_CLI_IMAGE=faasm/experiment-covid:${VERSION}
 fi
 
 INNER_SHELL=${SHELL:-"/bin/bash"}
 
-docker-compose \
+# Make sure the CLI is running already in the background (avoids creating a new
+# container every time)
+docker-compose -f docker-compose.yml \
     up \
     --no-recreate \
     -d \
-    cli 
+    cli
 
-docker-compose \
+# Attach to the CLI container
+docker-compose -f docker-compose.yml \
     exec \
     cli \
     ${INNER_SHELL}

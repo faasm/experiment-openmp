@@ -1,14 +1,25 @@
-FROM faasm/cli:0.5.10
+ARG EXPERIMENTS_VERSION
+FROM faasm/cpp-sysroot:0.0.23 as toolchain
 
-RUN apt update
+ARG EXPERIMENTS_VERSION
+FROM faasm/experiment-base:${EXPERIMENTS_VERSION} as experiments
 
-COPY . /code/experiment/
+# Copy in toolchain
+COPY --from=toolchain /usr/local/faasm /usr/local/faasm
 
-# Build native 
-WORKDIR /code/experiment/
-RUN ./bin/build_native.sh
+# Clone the code
+RUN git clone https://github.com/faasm/experiment-covid /code/experiment-covid
+WORKDIR /code/experiment-covid
+RUN git checkout wasm-build
+RUN git submodule update --init
 
-# Build wasm version
-RUN ./bin/build_wasm.sh
+# Prepare data
+RUN inv native.unzip
+
+# WebAssembly build
+RUN inv wasm
+
+# Native build
+RUN inv native
 
 CMD ["/bin/bash"]

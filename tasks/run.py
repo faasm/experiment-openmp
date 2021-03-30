@@ -27,7 +27,10 @@ WASM_RESULTS_FILE = join(RESULTS_DIR, "covid_wasm.csv")
 
 # Countries in order of size:
 # - Guam
+# - US Virgin Islands
+# - Iceland
 # - Malta
+# - Alaska (quite longer)
 DEFAULT_COUNTRY = "Guam"
 NUM_CORES = cpu_count()
 NUM_REPEATS = 3

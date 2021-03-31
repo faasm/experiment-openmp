@@ -10,7 +10,7 @@ CMAKE_TOOLCHAIN_FILE = "/usr/local/faasm/toolchain/tools/WasiToolchain.cmake"
 
 
 @task(default=True)
-def build(ctx, clean=False):
+def build(ctx, clean=False, verbose=False):
     """
     Builds the function for Faasm
     """
@@ -20,7 +20,6 @@ def build(ctx, clean=False):
     makedirs(WASM_BUILD_DIR, exist_ok=True)
 
     cmake_cmd = [
-        "VERBOSE=1",
         "cmake",
         "-GNinja",
         "-DCMAKE_BUILD_TYPE=Release",
@@ -33,7 +32,9 @@ def build(ctx, clean=False):
     run(cmake_cmd_str, shell=True, check=True, cwd=WASM_BUILD_DIR)
 
     run(
-        "cmake --build . --target all",
+        "cmake --build . --target all {}".format(
+            "--verbose" if verbose else ""
+        ),
         shell=True,
         check=True,
         cwd=WASM_BUILD_DIR,
@@ -52,6 +53,8 @@ def upload(ctx, host="faasm", port=8002, local=False):
         makedirs(dest_dir, exist_ok=True)
 
         dest_file = join(dest_dir, "function.wasm")
+
+        print("Copying {} to {}".format(wasm_file, dest_file))
         copyfile(wasm_file, dest_file)
     else:
         url = "http://{}:{}/f/{}/{}".format(host, port, FAASM_USER, FAASM_FUNC)

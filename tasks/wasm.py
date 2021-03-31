@@ -20,6 +20,7 @@ def build(ctx, clean=False):
     makedirs(WASM_BUILD_DIR, exist_ok=True)
 
     cmake_cmd = [
+        "VERBOSE=1",
         "cmake",
         "-GNinja",
         "-DCMAKE_BUILD_TYPE=Release",

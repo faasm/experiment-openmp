@@ -6,15 +6,37 @@ ICL.
 This repository should be used as a submodule of 
 [faasm/experiment-base](https://github.com/faasm/experiment-base).
 
+## Setup
+
 The data must be unzipped using:
 
 ```bash
 inv native.unzip
 ```
 
-## Commandline
+Then uploaded to Faasm using:
 
-To see what tasks are available, run:
+```bash
+# Locally
+inv run.upload-data --local
+
+# Remotely
+inv run.upload-data --host <faasm_host>
+```
+
+You can then build the code with:
+
+```bash
+inv wasm
+```
+
+Which will automatically do the local upload. To upload remotely:
+
+```bash
+inv wasm.upload --host <faasm_host>
+```
+
+To see what other tasks are available, run:
 
 ```bash
 inv -l

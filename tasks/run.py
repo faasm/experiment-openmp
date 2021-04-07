@@ -189,7 +189,7 @@ def faasm(ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY):
 
 
 @task
-def native(ctx, local=True, country=DEFAULT_COUNTRY):
+def native(ctx, local=True, country=DEFAULT_COUNTRY, debug=False):
     """
     Runs the native experiment
     """
@@ -215,25 +215,28 @@ def native(ctx, local=True, country=DEFAULT_COUNTRY):
             # Simulator complains if output files already exist
             clean_duplicates(country)
 
-            # Run the command
-            cmd_res = run(
-                cmd_str, shell=True, check=True, stdout=PIPE, stderr=STDOUT
-            )
-            cmd_out = cmd_res.stdout.decode("utf-8")
-
-            # Parse the output
-            this_time = parse_output(cmd_out)
-
-            # Record the result
-            write_result_line(
-                NATIVE_RESULTS_FILE, country, n_threads, run_idx, this_time
-            )
-
-            print(
-                "{} {} threads, run {}/{}: {}".format(
-                    country, n_threads, run_idx, NUM_REPEATS, this_time
+            if debug:
+                run(cmd_str, shell=True, check=True)
+            else:
+                # Run the command
+                cmd_res = run(
+                    cmd_str, shell=True, check=True, stdout=PIPE, stderr=STDOUT
                 )
-            )
+                cmd_out = cmd_res.stdout.decode("utf-8")
+
+                # Parse the output
+                this_time = parse_output(cmd_out)
+
+                # Record the result
+                write_result_line(
+                    NATIVE_RESULTS_FILE, country, n_threads, run_idx, this_time
+                )
+
+                print(
+                    "{} {} threads, run {}/{}: {}".format(
+                        country, n_threads, run_idx, NUM_REPEATS, this_time
+                    )
+                )
 
 
 def clean_duplicates(country):

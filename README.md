@@ -42,6 +42,24 @@ To see what other tasks are available, run:
 inv -l
 ```
 
+## Running
+
+To run the native version locally, you can call:
+
+```bash
+# Default country
+inv run.native
+
+# Some other country
+inv run.native --country=Malta
+```
+
+To run the experiment in Faasm you need a Faasm cluster running somewhere:
+
+```bash
+inv run.faasm --host=<faasm_host>
+```
+
 ## Example Invocation
 
 The commandline arguments for the CovidSim executable are quite long and fiddly,

@@ -128,15 +128,19 @@ def upload_data(
         local_file_path = join(DATA_DIR, relative_path)
 
         if local:
-            print("Copying {} locally".format(relative_path))
-
             # Create directory if not exists
             dest_file = join(FAASM_LOCAL_SHARED_DIR, relative_path)
             dest_dir = dirname(dest_file)
             makedirs(dest_dir, exist_ok=True)
 
-            # Do the copy
-            copyfile(local_file_path, dest_file)
+            # Do the copy. We use `cp` as the Python copyfile seems unreliable
+            # with bigger files
+            print("Copying {} -> {}".format(local_file_path, dest_file))
+            run(
+                "cp {} {}".format(local_file_path, dest_file),
+                shell=True,
+                check=True,
+            )
         else:
             print("Uploading {} as a shared file".format(relative_path))
             url = "http://{}:{}/file"

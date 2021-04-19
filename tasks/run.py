@@ -156,7 +156,9 @@ def upload_data(
 
 
 @task
-def faasm(ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY):
+def faasm(
+    ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY, repeats=NUM_REPEATS
+):
     """
     Runs the faasm experiment
     """
@@ -168,7 +170,7 @@ def faasm(ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY):
     for n_threads in range(1, NUM_CORES + 1):
         print("Running {} with {} threads".format(country, n_threads))
 
-        for run_idx in range(NUM_REPEATS):
+        for run_idx in range(repeats):
             cmdline_args = get_cmdline_args(country, n_threads, FAASM_DATA_DIR)
 
             # Build message data
@@ -192,7 +194,14 @@ def faasm(ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY):
 
 
 @task
-def native(ctx, local=True, country=DEFAULT_COUNTRY, debug=False):
+def native(
+    ctx,
+    local=True,
+    country=DEFAULT_COUNTRY,
+    debug=False,
+    threads=None,
+    repeats=NUM_REPEATS,
+):
     """
     Runs the native experiment
     """
@@ -202,11 +211,16 @@ def native(ctx, local=True, country=DEFAULT_COUNTRY, debug=False):
 
     write_csv_header(NATIVE_RESULTS_FILE)
 
+    if threads:
+        threads_list = [threads]
+    else:
+        threads_list = range(1, NUM_CORES + 1)
+
     # Run experiments
-    for n_threads in range(1, NUM_CORES + 1):
+    for n_threads in threads_list:
         print("Running {} with {} threads".format(country, n_threads))
 
-        for run_idx in range(NUM_REPEATS):
+        for run_idx in range(repeats):
             cmdline_args = get_cmdline_args(country, n_threads, DATA_DIR)
 
             # Prepare cmd
@@ -237,7 +251,7 @@ def native(ctx, local=True, country=DEFAULT_COUNTRY, debug=False):
 
                 print(
                     "{} {} threads, run {}/{}: {}".format(
-                        country, n_threads, run_idx, NUM_REPEATS, this_time
+                        country, n_threads, run_idx, repeats, this_time
                     )
                 )
 

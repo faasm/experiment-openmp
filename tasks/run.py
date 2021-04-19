@@ -10,7 +10,6 @@ from tasks.util import (
     FAASM_FUNC,
 )
 from os import makedirs, remove
-from shutil import copyfile
 import requests
 import re
 

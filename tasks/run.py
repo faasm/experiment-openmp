@@ -17,7 +17,7 @@ import time
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
 
-FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared_store/covid"
+FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared_store"
 FAASM_DATA_DIR = "faasm://covid"
 
 IMAGE_NAME = "experiment-covid"
@@ -131,7 +131,7 @@ def write_result_line(
 
 @task
 def upload_data(
-    ctx, local=True, host="faasm", port=8002, country=DEFAULT_COUNTRY
+    ctx, local=False, host="faasm", port=8002, country=DEFAULT_COUNTRY
 ):
     """
     Uploads the data files needed for Covid sim
@@ -141,10 +141,11 @@ def upload_data(
 
     for relative_path in files:
         local_file_path = join(DATA_DIR, relative_path)
+        faasm_file_path = join("covid", relative_path)
 
         if local:
             # Create directory if not exists
-            dest_file = join(FAASM_LOCAL_SHARED_DIR, relative_path)
+            dest_file = join(FAASM_LOCAL_SHARED_DIR, faasm_file_path)
             dest_dir = dirname(dest_file)
             makedirs(dest_dir, exist_ok=True)
 
@@ -157,13 +158,13 @@ def upload_data(
                 check=True,
             )
         else:
-            print("Uploading {} as a shared file".format(relative_path))
-            url = "http://{}:{}/file"
+            print("Uploading {} as a shared file".format(faasm_file_path))
+            url = "http://{}:{}/file".format(host, port)
 
             response = requests.put(
                 url,
                 data=open(local_file_path, "rb"),
-                headers={"FilePath": relative_path},
+                headers={"FilePath": faasm_file_path},
             )
 
             print(
@@ -173,7 +174,12 @@ def upload_data(
 
 @task
 def faasm(
-    ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY, repeats=NUM_REPEATS
+    ctx,
+    host="faasm",
+    port=8080,
+    country=DEFAULT_COUNTRY,
+    repeats=NUM_REPEATS,
+    threads=None,
 ):
     """
     Runs the faasm experiment
@@ -182,8 +188,13 @@ def faasm(
 
     write_csv_header(WASM_RESULTS_FILE)
 
+    if threads:
+        threads_list = [threads]
+    else:
+        threads_list = range(1, NUM_CORES + 1)
+
     # Run experiments
-    for n_threads in range(1, NUM_CORES + 1):
+    for n_threads in threads_list:
         print("Running {} with {} threads".format(country, n_threads))
 
         for run_idx in range(repeats):
@@ -257,9 +268,6 @@ def native(
             cmd_str = " ".join(cmd)
             print(cmd_str)
 
-            # Simulator complains if output files already exist
-            clean_duplicates(country)
-
             if debug:
                 run(cmd_str, shell=True, check=True)
             else:
@@ -293,17 +301,6 @@ def native(
                         country, n_threads, run_idx, repeats, this_time
                     )
                 )
-
-
-def clean_duplicates(country):
-    files = [
-        "/tmp/{}_pop_density.bin".format(country),
-        "/tmp/Network_{}_T1_R3.0.bin".format(country),
-    ]
-
-    for f in files:
-        if exists(f):
-            remove(f)
 
 
 def parse_output(cmd_out):

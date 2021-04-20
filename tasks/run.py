@@ -12,6 +12,7 @@ from tasks.util import (
 from os import makedirs, remove
 import requests
 import re
+import time
 
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
@@ -102,13 +103,28 @@ def get_cmdline_args(country, n_threads, data_dir):
 def write_csv_header(result_file):
     makedirs(RESULTS_DIR, exist_ok=True)
     with open(result_file, "w") as out_file:
-        out_file.write("Country,Threads,Run,Time(s)\n")
+        out_file.write("Country,Threads,Run,Setup,Execution,Total,Actual\n")
 
 
-def write_result_line(result_file, country, n_threads, run_idx, total_time):
+def write_result_line(
+    result_file,
+    country,
+    n_threads,
+    run_idx,
+    setup_time,
+    exec_time,
+    total_time,
+    actual_time,
+):
     with open(result_file, "a") as out_file:
-        result_line = "{},{},{},{}\n".format(
-            country, n_threads, run_idx, total_time
+        result_line = "{},{},{},{},{},{},{}\n".format(
+            country,
+            n_threads,
+            run_idx,
+            setup_time,
+            exec_time,
+            total_time,
+            actual_time,
         )
         out_file.write(result_line)
 
@@ -181,15 +197,27 @@ def faasm(
             }
 
             # Invoke
+            start = time.time()
             response = requests.post(url, json=msg)
+            actual_time = time.time() - start
+
             print(
                 "Response {}:\n{}".format(response.status_code, response.text)
             )
 
-            # Write outputs
-            total_time = parse_output(response.text)
+            # Parse output
+            setup_time, exec_time, total_time = parse_output(response.text)
+
+            # Write output
             write_result_line(
-                WASM_RESULTS_FILE, country, n_threads, run_idx, total_time
+                WASM_RESULTS_FILE,
+                country,
+                n_threads,
+                run_idx,
+                setup_time,
+                exec_time,
+                total_time,
+                actual_time,
             )
 
 
@@ -236,17 +264,28 @@ def native(
                 run(cmd_str, shell=True, check=True)
             else:
                 # Run the command
+                start = time.time()
                 cmd_res = run(
                     cmd_str, shell=True, check=True, stdout=PIPE, stderr=STDOUT
                 )
+                actual_time = time.time() - start
+
+                # Get the output
                 cmd_out = cmd_res.stdout.decode("utf-8")
 
                 # Parse the output
-                this_time = parse_output(cmd_out)
+                setup_time, exec_time, this_time = parse_output(cmd_out)
 
                 # Record the result
                 write_result_line(
-                    NATIVE_RESULTS_FILE, country, n_threads, run_idx, this_time
+                    NATIVE_RESULTS_FILE,
+                    country,
+                    n_threads,
+                    run_idx,
+                    setup_time,
+                    exec_time,
+                    this_time,
+                    actual_time,
                 )
 
                 print(
@@ -272,12 +311,22 @@ def parse_output(cmd_out):
     exec_times = re.findall("Model ran in ([0-9.]*) seconds", cmd_out)
     setup_times = re.findall("Model setup in ([0-9.]*) seconds", cmd_out)
 
-    if len(setup_times) != len(exec_times):
-        raise RuntimeError("Error: Mismatch between setup and run times")
+    if len(setup_times) != 1:
+        raise RuntimeError(
+            "Expected to find one setup time but got {}".format(
+                len(setup_times)
+            )
+        )
 
-    for i, (exec_time, setup_time) in enumerate(zip(exec_times, setup_times)):
-        exec_times[i] = float(exec_time) - float(setup_time)
+    if len(exec_times) != 1:
+        raise RuntimeError(
+            "Expected to find one execution time but got {}".format(
+                len(exec_times)
+            )
+        )
 
-    total_time = sum(exec_times)
+    exec_time = float(exec_times[0])
+    setup_time = float(setup_times[0])
+    total_time = exec_time + setup_time
 
-    return total_time
+    return setup_time, exec_time, total_time

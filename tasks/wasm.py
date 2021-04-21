@@ -45,7 +45,7 @@ def build(ctx, clean=False, verbose=False):
 
 
 @task
-def upload(ctx, host="faasm", port=8002, local=False):
+def upload(ctx, host="localhost", port=8002, local=False):
     wasm_file = join(WASM_BUILD_DIR, "src", "CovidSim")
 
     if local:

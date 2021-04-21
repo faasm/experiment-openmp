@@ -1,7 +1,7 @@
 from invoke import task
 from multiprocessing import cpu_count
 from subprocess import run, PIPE, STDOUT
-from os.path import join, exists, dirname
+from os.path import join, dirname
 from tasks.util import (
     RESULTS_DIR,
     COVID_DIR,
@@ -9,7 +9,7 @@ from tasks.util import (
     FAASM_USER,
     FAASM_FUNC,
 )
-from os import makedirs, remove
+from os import makedirs
 import requests
 import re
 import time
@@ -103,7 +103,7 @@ def get_cmdline_args(country, n_threads, data_dir):
 def write_csv_header(result_file):
     makedirs(RESULTS_DIR, exist_ok=True)
     with open(result_file, "w") as out_file:
-        out_file.write("Country,Threads,Run,Setup,Execution,Total,Actual\n")
+        out_file.write("Country,Threads,Run,Setup,Execution,Actual\n")
 
 
 def write_result_line(
@@ -113,17 +113,15 @@ def write_result_line(
     run_idx,
     setup_time,
     exec_time,
-    total_time,
     actual_time,
 ):
     with open(result_file, "a") as out_file:
-        result_line = "{},{},{},{},{},{},{}\n".format(
+        result_line = "{},{},{},{},{},{}\n".format(
             country,
             n_threads,
             run_idx,
             setup_time,
             exec_time,
-            total_time,
             actual_time,
         )
         out_file.write(result_line)
@@ -131,7 +129,7 @@ def write_result_line(
 
 @task
 def upload_data(
-    ctx, local=False, host="faasm", port=8002, country=DEFAULT_COUNTRY
+    ctx, local=False, host="localhost", port=8002, country=DEFAULT_COUNTRY
 ):
     """
     Uploads the data files needed for Covid sim
@@ -175,7 +173,7 @@ def upload_data(
 @task
 def faasm(
     ctx,
-    host="faasm",
+    host="localhost",
     port=8080,
     country=DEFAULT_COUNTRY,
     repeats=NUM_REPEATS,
@@ -205,19 +203,45 @@ def faasm(
                 "user": FAASM_USER,
                 "function": FAASM_FUNC,
                 "cmdline": " ".join(cmdline_args),
+                "async": True,
             }
 
             # Invoke
             start = time.time()
             response = requests.post(url, json=msg)
-            actual_time = time.time() - start
 
-            print(
-                "Response {}:\n{}".format(response.status_code, response.text)
-            )
+            if response.status_code != 200:
+                print(
+                    "Initial request failed: {}:\n{}".format(
+                        response.status_code, response.text
+                    )
+                )
+
+            msg_id = int(response.text.strip())
+            print("Polling message {}".format(msg_id))
+
+            while True:
+                interval = 2
+                time.sleep(interval)
+
+                status_msg = {
+                    "user": "cov",
+                    "function": "sim",
+                    "status": True,
+                    "id": msg_id,
+                }
+                response = requests.post(url, json=status_msg)
+
+                print(response.text)
+                if response.text.startswith("SUCCESS"):
+                    actual_time = time.time() - start
+                    break
+
+                if response.text.startswith("FAILED"):
+                    raise RuntimeError("Call failed")
 
             # Parse output
-            setup_time, exec_time, total_time = parse_output(response.text)
+            setup_time, exec_time = parse_output(response.text)
 
             # Write output
             write_result_line(
@@ -227,7 +251,6 @@ def faasm(
                 run_idx,
                 setup_time,
                 exec_time,
-                total_time,
                 actual_time,
             )
 
@@ -282,7 +305,7 @@ def native(
                 cmd_out = cmd_res.stdout.decode("utf-8")
 
                 # Parse the output
-                setup_time, exec_time, this_time = parse_output(cmd_out)
+                setup_time, exec_time = parse_output(cmd_out)
 
                 # Record the result
                 write_result_line(
@@ -292,13 +315,12 @@ def native(
                     run_idx,
                     setup_time,
                     exec_time,
-                    this_time,
                     actual_time,
                 )
 
                 print(
                     "{} {} threads, run {}/{}: {}".format(
-                        country, n_threads, run_idx, repeats, this_time
+                        country, n_threads, run_idx, repeats, exec_time
                     )
                 )
 
@@ -324,6 +346,5 @@ def parse_output(cmd_out):
 
     exec_time = float(exec_times[0])
     setup_time = float(setup_times[0])
-    total_time = exec_time + setup_time
 
-    return setup_time, exec_time, total_time
+    return setup_time, exec_time

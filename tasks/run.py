@@ -22,9 +22,6 @@ FAASM_DATA_DIR = "faasm://covid"
 
 IMAGE_NAME = "experiment-covid"
 
-NATIVE_RESULTS_FILE = join(RESULTS_DIR, "covid_native.csv")
-WASM_RESULTS_FILE = join(RESULTS_DIR, "covid_wasm.csv")
-
 # Countries in order of size:
 # - Guam
 # - US Virgin Islands
@@ -183,8 +180,8 @@ def faasm(
     Runs the faasm experiment
     """
     url = "http://{}:{}".format(host, port)
-
-    write_csv_header(WASM_RESULTS_FILE)
+    result_file = join(RESULTS_DIR, "covid_wasm_{}.csv".format(country))
+    write_csv_header(result_file)
 
     if threads:
         threads_list = [threads]
@@ -245,7 +242,7 @@ def faasm(
 
             # Write output
             write_result_line(
-                WASM_RESULTS_FILE,
+                result_file,
                 country,
                 n_threads,
                 run_idx,
@@ -271,7 +268,8 @@ def native(
         print("Remote not yet implemented")
         exit(1)
 
-    write_csv_header(NATIVE_RESULTS_FILE)
+    result_file = join(RESULTS_DIR, "covid_native_{}.csv".format(country))
+    write_csv_header(result_file)
 
     if threads:
         threads_list = [threads]
@@ -309,7 +307,7 @@ def native(
 
                 # Record the result
                 write_result_line(
-                    NATIVE_RESULTS_FILE,
+                    result_file,
                     country,
                     n_threads,
                     run_idx,

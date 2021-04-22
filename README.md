@@ -60,6 +60,18 @@ To run the experiment in Faasm you need a Faasm cluster running somewhere:
 inv run.faasm --host=<faasm_host>
 ```
 
+Note that if you have set up the Faasm development cluster on your local
+machine, you can run the `bin/cli.sh` script, and invoke locally (as it's on the
+host network), i.e.
+
+```bash
+# Start up the dev container
+./bin/cli.sh
+
+# From within
+inv run.faasm --host=localhost
+```
+
 ## Example Invocation
 
 The commandline arguments for the CovidSim executable are quite long and fiddly,

@@ -1,7 +1,7 @@
 from invoke import task
 from multiprocessing import cpu_count
 from subprocess import run, PIPE, STDOUT
-from os.path import join, exists, dirname
+from os.path import join, dirname
 from tasks.util import (
     RESULTS_DIR,
     COVID_DIR,
@@ -9,20 +9,18 @@ from tasks.util import (
     FAASM_USER,
     FAASM_FUNC,
 )
-from os import makedirs, remove
+from os import makedirs
 import requests
 import re
+import time
 
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
 
-FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared_store/covid"
+FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared_store"
 FAASM_DATA_DIR = "faasm://covid"
 
 IMAGE_NAME = "experiment-covid"
-
-NATIVE_RESULTS_FILE = join(RESULTS_DIR, "covid_native.csv")
-WASM_RESULTS_FILE = join(RESULTS_DIR, "covid_wasm.csv")
 
 # Countries in order of size:
 # - Guam
@@ -102,20 +100,33 @@ def get_cmdline_args(country, n_threads, data_dir):
 def write_csv_header(result_file):
     makedirs(RESULTS_DIR, exist_ok=True)
     with open(result_file, "w") as out_file:
-        out_file.write("Country,Threads,Run,Time(s)\n")
+        out_file.write("Country,Threads,Run,Setup,Execution,Actual\n")
 
 
-def write_result_line(result_file, country, n_threads, run_idx, total_time):
+def write_result_line(
+    result_file,
+    country,
+    n_threads,
+    run_idx,
+    setup_time,
+    exec_time,
+    actual_time,
+):
     with open(result_file, "a") as out_file:
-        result_line = "{},{},{},{}\n".format(
-            country, n_threads, run_idx, total_time
+        result_line = "{},{},{},{},{},{}\n".format(
+            country,
+            n_threads,
+            run_idx,
+            setup_time,
+            exec_time,
+            actual_time,
         )
         out_file.write(result_line)
 
 
 @task
 def upload_data(
-    ctx, local=True, host="faasm", port=8002, country=DEFAULT_COUNTRY
+    ctx, local=False, host="localhost", port=8002, country=DEFAULT_COUNTRY
 ):
     """
     Uploads the data files needed for Covid sim
@@ -125,10 +136,11 @@ def upload_data(
 
     for relative_path in files:
         local_file_path = join(DATA_DIR, relative_path)
+        faasm_file_path = join("covid", relative_path)
 
         if local:
             # Create directory if not exists
-            dest_file = join(FAASM_LOCAL_SHARED_DIR, relative_path)
+            dest_file = join(FAASM_LOCAL_SHARED_DIR, faasm_file_path)
             dest_dir = dirname(dest_file)
             makedirs(dest_dir, exist_ok=True)
 
@@ -141,13 +153,13 @@ def upload_data(
                 check=True,
             )
         else:
-            print("Uploading {} as a shared file".format(relative_path))
-            url = "http://{}:{}/file"
+            print("Uploading {} as a shared file".format(faasm_file_path))
+            url = "http://{}:{}/file".format(host, port)
 
             response = requests.put(
                 url,
                 data=open(local_file_path, "rb"),
-                headers={"FilePath": relative_path},
+                headers={"FilePath": faasm_file_path},
             )
 
             print(
@@ -157,17 +169,28 @@ def upload_data(
 
 @task
 def faasm(
-    ctx, host="faasm", port=8080, country=DEFAULT_COUNTRY, repeats=NUM_REPEATS
+    ctx,
+    host="localhost",
+    port=8080,
+    country=DEFAULT_COUNTRY,
+    repeats=NUM_REPEATS,
+    threads=None,
+    resume=1,
 ):
     """
     Runs the faasm experiment
     """
     url = "http://{}:{}".format(host, port)
+    result_file = join(RESULTS_DIR, "covid_wasm_{}.csv".format(country))
+    write_csv_header(result_file)
 
-    write_csv_header(WASM_RESULTS_FILE)
+    if threads:
+        threads_list = [threads]
+    else:
+        threads_list = range(int(resume), NUM_CORES + 1)
 
     # Run experiments
-    for n_threads in range(1, NUM_CORES + 1):
+    for n_threads in threads_list:
         print("Running {} with {} threads".format(country, n_threads))
 
         for run_idx in range(repeats):
@@ -178,18 +201,55 @@ def faasm(
                 "user": FAASM_USER,
                 "function": FAASM_FUNC,
                 "cmdline": " ".join(cmdline_args),
+                "async": True,
             }
 
             # Invoke
+            start = time.time()
             response = requests.post(url, json=msg)
-            print(
-                "Response {}:\n{}".format(response.status_code, response.text)
-            )
 
-            # Write outputs
-            total_time = parse_output(response.text)
+            if response.status_code != 200:
+                print(
+                    "Initial request failed: {}:\n{}".format(
+                        response.status_code, response.text
+                    )
+                )
+
+            msg_id = int(response.text.strip())
+            print("Polling message {}".format(msg_id))
+
+            while True:
+                interval = 2
+                time.sleep(interval)
+
+                status_msg = {
+                    "user": "cov",
+                    "function": "sim",
+                    "status": True,
+                    "id": msg_id,
+                }
+                response = requests.post(url, json=status_msg)
+
+                print(response.text)
+                if response.text.startswith("SUCCESS"):
+                    actual_time = time.time() - start
+                    break
+
+                if response.text.startswith("FAILED"):
+                    raise RuntimeError("Call failed")
+
+            # Parse output
+            setup_time, exec_time = parse_output(response.text)
+
+            # Write output
             write_result_line(
-                WASM_RESULTS_FILE, country, n_threads, run_idx, total_time
+                result_file,
+                country,
+                n_threads,
+                run_idx,
+                setup_time,
+                exec_time,
+                actual_time,
             )
 
 
@@ -201,6 +261,7 @@ def native(
     debug=False,
     threads=None,
     repeats=NUM_REPEATS,
+    resume=1,
 ):
     """
     Runs the native experiment
@@ -209,12 +270,13 @@ def native(
         print("Remote not yet implemented")
         exit(1)
 
-    write_csv_header(NATIVE_RESULTS_FILE)
+    result_file = join(RESULTS_DIR, "covid_native_{}.csv".format(country))
+    write_csv_header(result_file)
 
     if threads:
         threads_list = [threads]
     else:
-        threads_list = range(1, NUM_CORES + 1)
+        threads_list = range(int(resume), NUM_CORES + 1)
 
     # Run experiments
     for n_threads in threads_list:
@@ -229,42 +291,38 @@ def native(
             cmd_str = " ".join(cmd)
             print(cmd_str)
 
-            # Simulator complains if output files already exist
-            clean_duplicates(country)
-
             if debug:
                 run(cmd_str, shell=True, check=True)
             else:
                 # Run the command
+                start = time.time()
                 cmd_res = run(
                     cmd_str, shell=True, check=True, stdout=PIPE, stderr=STDOUT
                 )
+                actual_time = time.time() - start
+
+                # Get the output
                 cmd_out = cmd_res.stdout.decode("utf-8")
 
                 # Parse the output
-                this_time = parse_output(cmd_out)
+                setup_time, exec_time = parse_output(cmd_out)
 
                 # Record the result
                 write_result_line(
-                    NATIVE_RESULTS_FILE, country, n_threads, run_idx, this_time
+                    result_file,
+                    country,
+                    n_threads,
+                    run_idx,
+                    setup_time,
+                    exec_time,
+                    actual_time,
                 )
 
                 print(
                     "{} {} threads, run {}/{}: {}".format(
-                        country, n_threads, run_idx, repeats, this_time
+                        country, n_threads, run_idx, repeats, exec_time
                     )
                 )
-
-
-def clean_duplicates(country):
-    files = [
-        "/tmp/{}_pop_density.bin".format(country),
-        "/tmp/Network_{}_T1_R3.0.bin".format(country),
-    ]
-
-    for f in files:
-        if exists(f):
-            remove(f)
 
 
 def parse_output(cmd_out):
@@ -272,12 +330,21 @@ def parse_output(cmd_out):
     exec_times = re.findall("Model ran in ([0-9.]*) seconds", cmd_out)
     setup_times = re.findall("Model setup in ([0-9.]*) seconds", cmd_out)
 
-    if len(setup_times) != len(exec_times):
-        raise RuntimeError("Error: Mismatch between setup and run times")
+    if len(setup_times) != 1:
+        raise RuntimeError(
+            "Expected to find one setup time but got {}".format(
+                len(setup_times)
+            )
+        )
 
-    for i, (exec_time, setup_time) in enumerate(zip(exec_times, setup_times)):
-        exec_times[i] = float(exec_time) - float(setup_time)
+    if len(exec_times) != 1:
+        raise RuntimeError(
+            "Expected to find one execution time but got {}".format(
+                len(exec_times)
+            )
+        )
 
-    total_time = sum(exec_times)
+    exec_time = float(exec_times[0])
+    setup_time = float(setup_times[0])
 
-    return total_time
+    return setup_time, exec_time

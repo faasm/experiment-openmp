@@ -175,6 +175,7 @@ def faasm(
     country=DEFAULT_COUNTRY,
     repeats=NUM_REPEATS,
     threads=None,
+    resume=1,
 ):
     """
     Runs the faasm experiment
@@ -186,7 +187,7 @@ def faasm(
     if threads:
         threads_list = [threads]
     else:
-        threads_list = range(1, NUM_CORES + 1)
+        threads_list = range(int(resume), NUM_CORES + 1)
 
     # Run experiments
     for n_threads in threads_list:
@@ -260,6 +261,7 @@ def native(
     debug=False,
     threads=None,
     repeats=NUM_REPEATS,
+    resume=1,
 ):
     """
     Runs the native experiment
@@ -274,7 +276,7 @@ def native(
     if threads:
         threads_list = [threads]
     else:
-        threads_list = range(1, NUM_CORES + 1)
+        threads_list = range(int(resume), NUM_CORES + 1)
 
     # Run experiments
     for n_threads in threads_list:

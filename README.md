@@ -3,10 +3,16 @@
 Based on the [Covid microsimulation](https://github.com/mrc-ide/covid-sim) from
 ICL. 
 
-This repository should be used as a submodule of 
-[faasm/experiment-base](https://github.com/faasm/experiment-base).
+## Container
 
-## Setup
+This repo is designed to be used through the associated Docker container. You
+can run it with:
+
+```bash
+./bin/cli.sh
+```
+
+## Data
 
 The data must be unzipped using:
 
@@ -14,7 +20,7 @@ The data must be unzipped using:
 inv native.unzip
 ```
 
-Then uploaded to Faasm using:
+To run in Faasm, it must be uploaded with:
 
 ```bash
 # Locally
@@ -24,22 +30,20 @@ inv run.upload-data --local
 inv run.upload-data --host <faasm_host>
 ```
 
-You can then build the code with:
+## Building the code
 
 ```bash
+# Native
+inv native
+
+# wasm
 inv wasm
 ```
 
-Which will automatically do the local upload. To upload remotely:
+To upload to a remote Faasm deployment:
 
 ```bash
 inv wasm.upload --host <faasm_host>
-```
-
-To see what other tasks are available, run:
-
-```bash
-inv -l
 ```
 
 ## Running
@@ -60,22 +64,11 @@ To run the experiment in Faasm you need a Faasm cluster running somewhere:
 inv run.faasm --host=<faasm_host>
 ```
 
-Note that if you have set up the Faasm development cluster on your local
-machine, you can run the `bin/cli.sh` script, and invoke locally (as it's on the
-host network), i.e.
-
-```bash
-# Start up the dev container
-./bin/cli.sh
-
-# From within
-inv run.faasm --host=localhost
-```
-
 ## Example Invocation
 
-The commandline arguments for the CovidSim executable are quite long and fiddly,
-here are two examples:
+The commandline arguments for the CovidSim executable are quite long and fiddly.
+Included here a couple of working examples for reference (the tasks in this repo
+will generate the relevant arguments automatically).
 
 ### Native
 

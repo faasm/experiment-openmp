@@ -17,10 +17,8 @@ import time
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
 
-FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared_store"
+FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared"
 FAASM_DATA_DIR = "faasm://covid"
-
-IMAGE_NAME = "experiment-covid"
 
 # Countries in order of size:
 # - Guam

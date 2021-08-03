@@ -1,4 +1,4 @@
-from os.path import dirname, realpath, expanduser, join, exists
+from os.path import dirname, realpath, expanduser, join
 
 HOME_DIR = expanduser("~")
 PROJ_ROOT = dirname(dirname(realpath(__file__)))
@@ -20,17 +20,11 @@ else:
     RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "covid")
 
 
-def get_experiments_base_version():
-    ver_file = join(EXPERIMENTS_BASE_DIR, "VERSION")
+def get_version():
+    ver_file = join(PROJ_ROOT, "VERSION")
 
-    if not exists(ver_file):
-        raise RuntimeError(
-            "Expecting this to be a submodule experiments-base, but couldn't find {}",
-            format(ver_file),
-        )
+    with open(ver_file, "r") as fh:
+        version = fh.read()
+        version = version.strip()
 
-    with open(ver_file, "r") as f:
-        version = f.read()
-
-    version = version.strip()
     return version

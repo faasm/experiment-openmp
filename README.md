@@ -1,7 +1,7 @@
 # Faasm Covid Experiment
 
 Based on the [Covid microsimulation](https://github.com/mrc-ide/covid-sim) from
-ICL. 
+ICL.
 
 ## Container
 
@@ -10,6 +10,12 @@ can run it with:
 
 ```bash
 ./bin/cli.sh
+```
+
+You can rebuild the image with:
+
+```bash
+inv container
 ```
 
 ## Data
@@ -93,8 +99,8 @@ For Guam
 
 ```
 {
-    'user': 'cov', 
-    'function': 'sim', 
+    'user': 'cov',
+    'function': 'sim',
     'cmdline': '/c:20                                       \
         /A:faasm://covid/admin_units/Guam_admin.txt        \
         /PP:faasm://covid/param_files/preUK_R0=2.0.txt     \

@@ -47,6 +47,8 @@ USA_TERRITORIES = [
 NIGERIA = ["Nigeria"]
 # -----------------------------------
 
+KNATIVE_HEADERS = {"Host": "faasm-worker.faasm.example.com"}
+
 
 def get_wpop_filename(country):
     # Work out population file
@@ -151,8 +153,10 @@ def upload_data(
                 check=True,
             )
         else:
-            print("Uploading {} as a shared file".format(faasm_file_path))
             url = "http://{}:{}/file".format(host, port)
+            print(
+                "Uploading {} shared file to {}".format(faasm_file_path, url)
+            )
 
             response = requests.put(
                 url,
@@ -204,7 +208,8 @@ def faasm(
 
             # Invoke
             start = time.time()
-            response = requests.post(url, json=msg)
+            print("Posting to {}".format(url))
+            response = requests.post(url, json=msg, headers=KNATIVE_HEADERS)
 
             if response.status_code != 200:
                 print(

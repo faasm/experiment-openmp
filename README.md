@@ -33,7 +33,7 @@ To run in Faasm, it must be uploaded with:
 inv run.upload-data --local
 
 # Remotely
-inv run.upload-data --host <faasm_host>
+inv run.upload-data --host <faasm_upload_host>
 ```
 
 ## Building the code
@@ -49,7 +49,7 @@ inv wasm
 To upload to a remote Faasm deployment:
 
 ```bash
-inv wasm.upload --host <faasm_host>
+inv wasm.upload --host <faasm_upload_host>
 ```
 
 ## Running
@@ -67,7 +67,7 @@ inv run.native --country=Malta
 To run the experiment in Faasm you need a Faasm cluster running somewhere:
 
 ```bash
-inv run.faasm --host=<faasm_host>
+inv run.faasm --host=<faasm_invoke_host>
 ```
 
 ## Example Invocation

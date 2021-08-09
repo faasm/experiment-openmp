@@ -3,58 +3,60 @@
 Based on the [Covid microsimulation](https://github.com/mrc-ide/covid-sim) from
 ICL.
 
-## Container
+For general info on running these experiments see the [`experiment-base`
+repo](https://github.com/faasm/experiment-base).
 
-This repo is designed to be used through the associated Docker container. You
-can run it with:
+## Running on Faasm
+
+The code must be built, and data uploaded, from within the experiment container:
 
 ```bash
 ./bin/cli.sh
 ```
 
-You can rebuild the image with:
-
-```bash
-inv container
-```
-
-## Data
-
-The data must be unzipped using:
+Unzip and upload the data with:
 
 ```bash
 inv native.unzip
-```
 
-To run in Faasm, it must be uploaded with:
-
-```bash
-# Locally
+# Upload Locally
 inv run.upload-data --local
 
-# Remotely
+# Upload Remotely
 inv run.upload-data --host <faasm_upload_host>
 ```
 
-## Building the code
+Build the code with:
 
 ```bash
-# Native
-inv native
-
 # wasm
 inv wasm
 ```
 
-To upload to a remote Faasm deployment:
+Upload with:
 
 ```bash
 inv wasm.upload --host <faasm_upload_host>
 ```
 
-## Running
+The experiment must be run from _outside_ the container, using the
+`experiment-base` environment:
 
-To run the native version locally, you can call:
+```bash
+inv run.faasm --host=<faasm_invoke_host> --port=<faasm_invoke_port>
+```
+
+## Running natively
+
+To run the native version locally, you can build the code within the container:
+
+```bash
+./bin/cli.sh
+
+inv native
+```
+
+Then run with:
 
 ```bash
 # Default country
@@ -64,10 +66,12 @@ inv run.native
 inv run.native --country=Malta
 ```
 
-To run the experiment in Faasm you need a Faasm cluster running somewhere:
+## Rebuilding the container
+
+You can rebuild the image with:
 
 ```bash
-inv run.faasm --host=<faasm_invoke_host>
+inv container
 ```
 
 ## Example Invocation

@@ -1,11 +1,4 @@
-ARG EXPERIMENTS_VERSION
-FROM faasm/cpp-sysroot:0.0.23 as toolchain
-
-ARG EXPERIMENTS_VERSION
-FROM faasm/experiment-base:${EXPERIMENTS_VERSION} as experiments
-
-# Copy in toolchain
-COPY --from=toolchain /usr/local/faasm /usr/local/faasm
+FROM faasm/cpp-sysroot:0.0.26
 
 # Clone the code
 RUN git clone https://github.com/faasm/experiment-covid /code/experiment-covid

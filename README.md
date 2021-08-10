@@ -1,50 +1,62 @@
 # Faasm Covid Experiment
 
 Based on the [Covid microsimulation](https://github.com/mrc-ide/covid-sim) from
-ICL. 
+ICL.
 
-This repository should be used as a submodule of 
-[faasm/experiment-base](https://github.com/faasm/experiment-base).
+For general info on running these experiments see the [`experiment-base`
+repo](https://github.com/faasm/experiment-base).
 
-## Setup
+## Running on Faasm
 
-The data must be unzipped using:
+The code must be built, and data uploaded, from within the experiment container:
+
+```bash
+./bin/cli.sh
+```
+
+Unzip and upload the data with:
 
 ```bash
 inv native.unzip
-```
 
-Then uploaded to Faasm using:
-
-```bash
-# Locally
+# Upload Locally
 inv run.upload-data --local
 
-# Remotely
-inv run.upload-data --host <faasm_host>
+# Upload Remotely
+inv run.upload-data --host <faasm_upload_host>
 ```
 
-You can then build the code with:
+Build the code with:
 
 ```bash
+# wasm
 inv wasm
 ```
 
-Which will automatically do the local upload. To upload remotely:
+Upload with:
 
 ```bash
-inv wasm.upload --host <faasm_host>
+inv wasm.upload --host <faasm_upload_host>
 ```
 
-To see what other tasks are available, run:
+The experiment must be run from _outside_ the container, using the
+`experiment-base` environment:
 
 ```bash
-inv -l
+inv run.faasm --host=<faasm_invoke_host> --port=<faasm_invoke_port>
 ```
 
-## Running
+## Running natively
 
-To run the native version locally, you can call:
+To run the native version locally, you can build the code within the container:
+
+```bash
+./bin/cli.sh
+
+inv native
+```
+
+Then run with:
 
 ```bash
 # Default country
@@ -54,28 +66,19 @@ inv run.native
 inv run.native --country=Malta
 ```
 
-To run the experiment in Faasm you need a Faasm cluster running somewhere:
+## Rebuilding the container
+
+You can rebuild the image with:
 
 ```bash
-inv run.faasm --host=<faasm_host>
-```
-
-Note that if you have set up the Faasm development cluster on your local
-machine, you can run the `bin/cli.sh` script, and invoke locally (as it's on the
-host network), i.e.
-
-```bash
-# Start up the dev container
-./bin/cli.sh
-
-# From within
-inv run.faasm --host=localhost
+inv container
 ```
 
 ## Example Invocation
 
-The commandline arguments for the CovidSim executable are quite long and fiddly,
-here are two examples:
+The commandline arguments for the CovidSim executable are quite long and fiddly.
+Included here a couple of working examples for reference (the tasks in this repo
+will generate the relevant arguments automatically).
 
 ### Native
 
@@ -100,8 +103,8 @@ For Guam
 
 ```
 {
-    'user': 'cov', 
-    'function': 'sim', 
+    'user': 'cov',
+    'function': 'sim',
     'cmdline': '/c:20                                       \
         /A:faasm://covid/admin_units/Guam_admin.txt        \
         /PP:faasm://covid/param_files/preUK_R0=2.0.txt     \

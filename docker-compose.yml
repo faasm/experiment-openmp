@@ -11,5 +11,3 @@ services:
     volumes:
       - ${FAASM_LOCAL_DIR}:/usr/local/faasm
       - .:/code/experiment-covid
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /usr/bin/docker:/usr/bin/docker

@@ -17,10 +17,8 @@ import time
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
 
-FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared_store"
+FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared"
 FAASM_DATA_DIR = "faasm://covid"
-
-IMAGE_NAME = "experiment-covid"
 
 # Countries in order of size:
 # - Guam
@@ -48,6 +46,8 @@ USA_TERRITORIES = [
 
 NIGERIA = ["Nigeria"]
 # -----------------------------------
+
+KNATIVE_HEADERS = {"Host": "faasm-worker.faasm.example.com"}
 
 
 def get_wpop_filename(country):
@@ -153,8 +153,10 @@ def upload_data(
                 check=True,
             )
         else:
-            print("Uploading {} as a shared file".format(faasm_file_path))
             url = "http://{}:{}/file".format(host, port)
+            print(
+                "Uploading {} shared file to {}".format(faasm_file_path, url)
+            )
 
             response = requests.put(
                 url,
@@ -206,7 +208,8 @@ def faasm(
 
             # Invoke
             start = time.time()
-            response = requests.post(url, json=msg)
+            print("Posting to {}".format(url))
+            response = requests.post(url, json=msg, headers=KNATIVE_HEADERS)
 
             if response.status_code != 200:
                 print(

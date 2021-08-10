@@ -7,7 +7,7 @@ PROJ_ROOT=${THIS_DIR}/..
 
 pushd ${PROJ_ROOT} > /dev/null
 
-export VERSION=$(cat ../../VERSION)
+export VERSION=$(cat VERSION)
 
 if [[ -z "$FAASM_LOCAL_DIR" ]]; then
     echo "You must set your local /usr/local/faasm dir through FAASM_LOCAL_DIR"

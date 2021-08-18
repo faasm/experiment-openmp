@@ -1,6 +1,6 @@
 from invoke import task
 import requests
-from shutil import rmtree, copyfile
+from shutil import rmtree
 from os.path import exists, join
 from os import makedirs
 from tasks.util import COVID_DIR, WASM_BUILD_DIR, FAASM_USER, FAASM_FUNC
@@ -40,24 +40,12 @@ def build(ctx, clean=False, verbose=False):
         cwd=WASM_BUILD_DIR,
     )
 
-    # Do the local upload
-    upload(ctx, local=True)
-
 
 @task
-def upload(ctx, host="localhost", port=8002, local=False):
+def upload(ctx, host="localhost", port=8002):
     wasm_file = join(WASM_BUILD_DIR, "src", "CovidSim")
 
-    if local:
-        dest_dir = "/usr/local/faasm/wasm/{}/{}".format(FAASM_USER, FAASM_FUNC)
-        makedirs(dest_dir, exist_ok=True)
+    url = "http://{}:{}/f/{}/{}".format(host, port, FAASM_USER, FAASM_FUNC)
+    response = requests.put(url, data=open(wasm_file, "rb"))
 
-        dest_file = join(dest_dir, "function.wasm")
-
-        print("Copying {} to {}".format(wasm_file, dest_file))
-        copyfile(wasm_file, dest_file)
-    else:
-        url = "http://{}:{}/f/{}/{}".format(host, port, FAASM_USER, FAASM_FUNC)
-        response = requests.put(url, data=open(wasm_file, "rb"))
-
-        print("Response {}: {}".format(response.status_code, response.text))
+    print("Response {}: {}".format(response.status_code, response.text))

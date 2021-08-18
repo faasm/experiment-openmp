@@ -209,6 +209,7 @@ def faasm(
                         response.status_code, response.text
                     )
                 )
+            print("Response: {}".format(response.text))
 
             msg_id = int(response.text.strip())
             print("Polling message {}".format(msg_id))
@@ -223,17 +224,27 @@ def faasm(
                     "status": True,
                     "id": msg_id,
                 }
-                response = requests.post(url, json=status_msg)
+                response = requests.post(
+                    url, json=status_msg, headers=KNATIVE_HEADERS
+                )
 
                 print(response.text)
                 if response.text.startswith("SUCCESS"):
                     actual_time = time.time() - start
                     break
-
-                if response.text.startswith("FAILED"):
+                elif response.text.startswith("RUNNING"):
+                    continue
+                elif response.text.startswith("FAILED"):
                     raise RuntimeError("Call failed")
+                elif not response.text:
+                    raise RuntimeError("Empty status response")
+                else:
+                    raise RuntimeError(
+                        "Unexpected status response: {}".format(response.text)
+                    )
 
             # Write host stats
+            print("hoststats writing to {}".format(stats_csv))
             stats.stop_and_write_to_csv(stats_csv)
 
             # Parse output

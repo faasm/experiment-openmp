@@ -28,7 +28,7 @@ Unzip and upload the data with:
 ```bash
 inv native.unzip
 
-inv run.upload-data --host <faasm_upload_host>
+inv run.upload-data
 ```
 
 Build the code with:
@@ -41,7 +41,7 @@ inv wasm
 Upload with:
 
 ```bash
-inv wasm.upload --host <faasm_upload_host>
+inv wasm.upload
 ```
 
 The experiment must be run from _outside_ the container:
@@ -49,7 +49,7 @@ The experiment must be run from _outside_ the container:
 ```bash
 source ../../bin/workon.sh
 
-inv run.faasm --host=<faasm_invoke_host> --port=<faasm_invoke_port>
+inv run.faasm
 ```
 
 ## Running natively

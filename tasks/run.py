@@ -8,7 +8,11 @@ import re
 import time
 from hoststats.client import HostStats
 
-from tasks.faasm import get_faasm_worker_pods
+from tasks.faasm import (
+    get_faasm_worker_pods,
+    get_faasm_invoke_host_port,
+    get_faasm_upload_host_port,
+)
 from tasks.util import (
     RESULTS_DIR,
     COVID_DIR,
@@ -127,10 +131,11 @@ def write_result_line(
 
 
 @task
-def upload_data(ctx, host="localhost", port=8002, country=DEFAULT_COUNTRY):
+def upload_data(ctx, country=DEFAULT_COUNTRY):
     """
     Uploads the data files needed for Covid sim
     """
+    host, port = get_faasm_upload_host_port()
 
     files = get_data_files(country)
 
@@ -153,8 +158,6 @@ def upload_data(ctx, host="localhost", port=8002, country=DEFAULT_COUNTRY):
 @task
 def faasm(
     ctx,
-    host="localhost",
-    port=8080,
     country=DEFAULT_COUNTRY,
     repeats=NUM_REPEATS,
     threads=None,
@@ -163,6 +166,8 @@ def faasm(
     """
     Runs the faasm experiment
     """
+    host, port = get_faasm_invoke_host_port()
+
     url = "http://{}:{}".format(host, port)
     result_file = join(RESULTS_DIR, "covid_wasm_{}.csv".format(country))
     write_csv_header(result_file)

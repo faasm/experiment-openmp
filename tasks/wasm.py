@@ -3,8 +3,10 @@ import requests
 from shutil import rmtree
 from os.path import exists, join
 from os import makedirs
-from tasks.util import COVID_DIR, WASM_BUILD_DIR, FAASM_USER, FAASM_FUNC
 from subprocess import run
+
+from tasks.faasm import get_faasm_upload_host_port
+from tasks.util import COVID_DIR, WASM_BUILD_DIR, FAASM_USER, FAASM_FUNC
 
 CMAKE_TOOLCHAIN_FILE = "/usr/local/faasm/toolchain/tools/WasiToolchain.cmake"
 
@@ -42,7 +44,8 @@ def build(ctx, clean=False, verbose=False):
 
 
 @task
-def upload(ctx, host="localhost", port=8002):
+def upload(ctx):
+    host, port = get_faasm_upload_host_port()
     wasm_file = join(WASM_BUILD_DIR, "src", "CovidSim")
 
     url = "http://{}:{}/f/{}/{}".format(host, port, FAASM_USER, FAASM_FUNC)

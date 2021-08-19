@@ -1,7 +1,7 @@
 FROM faasm/cpp-sysroot:0.0.26
 
 # Install hoststats
-RUN pip3 install hoststats
+RUN pip3 install hoststats:0.0.7
 
 # Clone the code
 RUN git clone https://github.com/faasm/experiment-covid /code/experiment-covid

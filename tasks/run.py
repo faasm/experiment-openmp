@@ -1,7 +1,19 @@
 from invoke import task
 from multiprocessing import cpu_count
 from subprocess import run, PIPE, STDOUT
-from os.path import join, dirname
+from os.path import join
+from os import makedirs
+import requests
+import re
+import time
+from hoststats.client import HostStats
+
+from tasks.faasm import (
+    get_faasm_worker_pods,
+    get_faasm_invoke_host_port,
+    get_faasm_upload_host_port,
+    get_faasm_hoststats_proxy_ip,
+)
 from tasks.util import (
     RESULTS_DIR,
     COVID_DIR,
@@ -9,15 +21,10 @@ from tasks.util import (
     FAASM_USER,
     FAASM_FUNC,
 )
-from os import makedirs
-import requests
-import re
-import time
 
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")
 
-FAASM_LOCAL_SHARED_DIR = "/usr/local/faasm/shared"
 FAASM_DATA_DIR = "faasm://covid"
 
 # Countries in order of size:
@@ -125,12 +132,11 @@ def write_result_line(
 
 
 @task
-def upload_data(
-    ctx, local=False, host="localhost", port=8002, country=DEFAULT_COUNTRY
-):
+def upload_data(ctx, country=DEFAULT_COUNTRY):
     """
     Uploads the data files needed for Covid sim
     """
+    host, port = get_faasm_upload_host_port()
 
     files = get_data_files(country)
 
@@ -138,42 +144,21 @@ def upload_data(
         local_file_path = join(DATA_DIR, relative_path)
         faasm_file_path = join("covid", relative_path)
 
-        if local:
-            # Create directory if not exists
-            dest_file = join(FAASM_LOCAL_SHARED_DIR, faasm_file_path)
-            dest_dir = dirname(dest_file)
-            makedirs(dest_dir, exist_ok=True)
+        url = "http://{}:{}/file".format(host, port)
+        print("Uploading {} shared file to {}".format(faasm_file_path, url))
 
-            # Do the copy. We use `cp` as the Python copyfile seems unreliable
-            # with bigger files
-            print("Copying {} -> {}".format(local_file_path, dest_file))
-            run(
-                "cp {} {}".format(local_file_path, dest_file),
-                shell=True,
-                check=True,
-            )
-        else:
-            url = "http://{}:{}/file".format(host, port)
-            print(
-                "Uploading {} shared file to {}".format(faasm_file_path, url)
-            )
+        response = requests.put(
+            url,
+            data=open(local_file_path, "rb"),
+            headers={"FilePath": faasm_file_path},
+        )
 
-            response = requests.put(
-                url,
-                data=open(local_file_path, "rb"),
-                headers={"FilePath": faasm_file_path},
-            )
-
-            print(
-                "Response {}: {}".format(response.status_code, response.text)
-            )
+        print("Response {}: {}".format(response.status_code, response.text))
 
 
 @task
 def faasm(
     ctx,
-    host="localhost",
-    port=8080,
     country=DEFAULT_COUNTRY,
     repeats=NUM_REPEATS,
     threads=None,
@@ -182,9 +167,15 @@ def faasm(
     """
     Runs the faasm experiment
     """
+    host, port = get_faasm_invoke_host_port()
+
     url = "http://{}:{}".format(host, port)
     result_file = join(RESULTS_DIR, "covid_wasm_{}.csv".format(country))
     write_csv_header(result_file)
+
+    pod_names, pod_ips = get_faasm_worker_pods()
+    proxy_ip = get_faasm_hoststats_proxy_ip()
+    stats = HostStats(pod_ips, proxy=proxy_ip)
 
     if threads:
         threads_list = [threads]
@@ -196,6 +187,11 @@ def faasm(
         print("Running {} with {} threads".format(country, n_threads))
 
         for run_idx in range(repeats):
+            stats_csv = join(
+                RESULTS_DIR,
+                "hoststats_wasm_{}_{}.csv".format(n_threads, run_idx),
+            )
+
             cmdline_args = get_cmdline_args(country, n_threads, FAASM_DATA_DIR)
 
             # Build message data
@@ -206,8 +202,11 @@ def faasm(
                 "async": True,
             }
 
-            # Invoke
+            # Start timer and host stats collection
             start = time.time()
+            stats.start_collection()
+
+            # Invoke
             print("Posting to {}".format(url))
             response = requests.post(url, json=msg, headers=KNATIVE_HEADERS)
 
@@ -217,6 +216,7 @@ def faasm(
                         response.status_code, response.text
                     )
                 )
+            print("Response: {}".format(response.text))
 
             msg_id = int(response.text.strip())
             print("Polling message {}".format(msg_id))
@@ -231,15 +231,28 @@ def faasm(
                     "status": True,
                     "id": msg_id,
                 }
-                response = requests.post(url, json=status_msg)
+                response = requests.post(
+                    url, json=status_msg, headers=KNATIVE_HEADERS
+                )
 
                 print(response.text)
                 if response.text.startswith("SUCCESS"):
                     actual_time = time.time() - start
                     break
-
-                if response.text.startswith("FAILED"):
+                elif response.text.startswith("RUNNING"):
+                    continue
+                elif response.text.startswith("FAILED"):
                     raise RuntimeError("Call failed")
+                elif not response.text:
+                    raise RuntimeError("Empty status response")
+                else:
+                    raise RuntimeError(
+                        "Unexpected status response: {}".format(response.text)
+                    )
+
+            # Write host stats
+            print("hoststats writing to {}".format(stats_csv))
+            stats.stop_and_write_to_csv(stats_csv)
 
             # Parse output
             setup_time, exec_time = parse_output(response.text)
@@ -334,11 +347,10 @@ def parse_output(cmd_out):
     setup_times = re.findall("Model setup in ([0-9.]*) seconds", cmd_out)
 
     if len(setup_times) != 1:
-        raise RuntimeError(
-            "Expected to find one setup time but got {}".format(
-                len(setup_times)
-            )
-        )
+        print("Setting setup time to zero, could not find in output")
+        setup_time = 0
+    else:
+        setup_time = float(setup_times[0])
 
     if len(exec_times) != 1:
         raise RuntimeError(
@@ -348,6 +360,5 @@ def parse_output(cmd_out):
         )
 
     exec_time = float(exec_times[0])
-    setup_time = float(setup_times[0])
 
     return setup_time, exec_time

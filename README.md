@@ -3,8 +3,17 @@
 Based on the [Covid microsimulation](https://github.com/mrc-ide/covid-sim) from
 ICL.
 
-For general info on running these experiments see the [`experiment-base`
+Note, this repo should be checked out as part of the Faasm/ Faabric experiment
+set-up covered in the [`experiment-base`
 repo](https://github.com/faasm/experiment-base).
+
+To check things are working:
+
+```bash
+../../bin/workon.sh
+
+inv -l
+```
 
 ## Running on Faasm
 
@@ -19,11 +28,7 @@ Unzip and upload the data with:
 ```bash
 inv native.unzip
 
-# Upload Locally
-inv run.upload-data --local
-
-# Upload Remotely
-inv run.upload-data --host <faasm_upload_host>
+inv run.upload-data
 ```
 
 Build the code with:
@@ -36,14 +41,15 @@ inv wasm
 Upload with:
 
 ```bash
-inv wasm.upload --host <faasm_upload_host>
+inv wasm.upload
 ```
 
-The experiment must be run from _outside_ the container, using the
-`experiment-base` environment:
+The experiment must be run from _outside_ the container:
 
 ```bash
-inv run.faasm --host=<faasm_invoke_host> --port=<faasm_invoke_port>
+source ../../bin/workon.sh
+
+inv run.faasm
 ```
 
 ## Running natively
@@ -65,6 +71,9 @@ inv run.native
 # Some other country
 inv run.native --country=Malta
 ```
+
+Remember that as this is based on OpenMP, the native version cannot run in a
+distributed manner.
 
 ## Rebuilding the container
 

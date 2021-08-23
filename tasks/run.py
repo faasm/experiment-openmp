@@ -347,11 +347,10 @@ def parse_output(cmd_out):
     setup_times = re.findall("Model setup in ([0-9.]*) seconds", cmd_out)
 
     if len(setup_times) != 1:
-        raise RuntimeError(
-            "Expected to find one setup time but got {}".format(
-                len(setup_times)
-            )
-        )
+        print("Setting setup time to zero, could not find in output")
+        setup_time = 0
+    else:
+        setup_time = float(setup_times[0])
 
     if len(exec_times) != 1:
         raise RuntimeError(
@@ -361,6 +360,5 @@ def parse_output(cmd_out):
         )
 
     exec_time = float(exec_times[0])
-    setup_time = float(setup_times[0])
 
     return setup_time, exec_time

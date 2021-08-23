@@ -1,6 +1,9 @@
 from configparser import ConfigParser
 from subprocess import run, PIPE
 from os.path import expanduser, join, exists
+import json
+
+from tasks.util import PROJ_ROOT
 
 FAASM_INI_FILE = join(expanduser("~"), ".config", "faasm.ini")
 
@@ -10,13 +13,16 @@ def get_faasm_ini_value(section, key):
         print("Expected to find faasm config at {}".format(FAASM_INI_FILE))
         raise RuntimeError("Did not find faasm config")
 
-    config = ConfigParser(FAASM_INI_FILE)
+    config = ConfigParser()
+    config.read(FAASM_INI_FILE)
     return config[section].get(key, "")
 
 
 def get_faasm_upload_host_port():
     host = get_faasm_ini_value("Faasm", "upload_host")
     port = get_faasm_ini_value("Faasm", "upload_port")
+
+    print("Using faasm upload {}:{}".format(host, port))
 
     return host, port
 
@@ -25,7 +31,25 @@ def get_faasm_invoke_host_port():
     host = get_faasm_ini_value("Faasm", "invoke_host")
     port = get_faasm_ini_value("Faasm", "invoke_port")
 
+    print("Using faasm invoke {}:{}".format(host, port))
+
     return host, port
+
+
+def get_faasm_hoststats_proxy_ip():
+    res = run(
+        "kubectl -n faasm get service hoststats-proxy -o json",
+        stdout=PIPE,
+        stderr=PIPE,
+        cwd=PROJ_ROOT,
+        shell=True,
+        check=True,
+    )
+
+    data = json.loads(res.stdout.decode("utf-8"))
+    ip = data["spec"]["clusterIP"]
+    print("Got hoststats proxy IP {}".format(ip))
+    return ip
 
 
 def get_faasm_worker_pods():

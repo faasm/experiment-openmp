@@ -12,6 +12,7 @@ from tasks.faasm import (
     get_faasm_worker_pods,
     get_faasm_invoke_host_port,
     get_faasm_upload_host_port,
+    get_faasm_hoststats_proxy_ip,
 )
 from tasks.util import (
     RESULTS_DIR,
@@ -173,7 +174,8 @@ def faasm(
     write_csv_header(result_file)
 
     pod_names, pod_ips = get_faasm_worker_pods()
-    stats = HostStats(pod_ips)
+    proxy_ip = get_faasm_hoststats_proxy_ip()
+    stats = HostStats(pod_ips, proxy=proxy_ip)
 
     if threads:
         threads_list = [threads]

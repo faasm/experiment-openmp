@@ -40,9 +40,11 @@ def get_faasm_hoststats_proxy_ip():
 
 
 def get_faasm_worker_pods():
-    ips = get_faasm_ini_value("Faasm", "worker_hoststats_ips")
-    print("Using faasm workers {}".format(ips))
-    return ips
+    pods = get_faasm_ini_value("Faasm", "worker_names")
+    pods = [p.strip() for p in pods.split(",") if p.strip()]
+
+    print("Using faasm worker pods: {}".format(pods))
+    return pods
 
 
 def get_knative_headers():

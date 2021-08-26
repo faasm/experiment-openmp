@@ -173,9 +173,13 @@ def faasm(
     result_file = join(RESULTS_DIR, "covid_wasm_{}.csv".format(country))
     write_csv_header(result_file)
 
-    pod_names, pod_ips = get_faasm_worker_pods()
-    proxy_ip = get_faasm_hoststats_proxy_ip()
-    stats = HostStats(pod_ips, proxy=proxy_ip)
+    pod_names = get_faasm_worker_pods()
+    stats = HostStats(
+        pod_names,
+        kubectl=True,
+        kubectl_container="user-container",
+        kubectl_ns="faasm",
+    )
 
     if threads:
         threads_list = [threads]

@@ -1,7 +1,7 @@
 version: "3"
 
 services:
-  cli:
+  covid-cli:
     image: ${COVID_CLI_IMAGE}
     working_dir: /code/experiment-covid
     stdin_open: true

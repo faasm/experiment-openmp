@@ -17,38 +17,27 @@ inv -l
 
 ## Running on Faasm
 
-The code must be built, and data uploaded, from within the experiment container:
+The code must be built from within the experiment container:
 
 ```bash
 ./bin/cli.sh
-```
 
-Unzip and upload the data with:
-
-```bash
-inv native.unzip
-
-inv run.upload-data
-```
-
-Build the code with:
-
-```bash
-# wasm
 inv wasm
 ```
 
-Upload with:
-
-```bash
-inv wasm.upload
-```
-
-The experiment must be run from _outside_ the container:
+The experiment can then be set up and run from _outside_ the container:
 
 ```bash
 source ../../bin/workon.sh
 
+# Data
+inv native.unzip
+inv run.upload-data
+
+# Wasm
+inv wasm.upload
+
+# Run
 inv run.faasm
 ```
 
@@ -62,7 +51,7 @@ To run the native version locally, you can build the code within the container:
 inv native
 ```
 
-Then run with:
+Then run (also inside the container):
 
 ```bash
 # Default country

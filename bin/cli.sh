@@ -20,18 +20,10 @@ fi
 
 INNER_SHELL=${SHELL:-"/bin/bash"}
 
-# Make sure the CLI is running already in the background (avoids creating a new
-# container every time)
-docker-compose -f docker-compose.yml \
-    up \
-    --no-recreate \
-    -d \
-    cli
-
-# Attach to the CLI container
-docker-compose -f docker-compose.yml \
-    exec \
-    cli \
+docker-compose \
+    run \
+    --rm \
+    covid-cli \
     ${INNER_SHELL}
 
 popd > /dev/null

@@ -12,7 +12,7 @@ from tasks.faasm import (
     get_faasm_worker_pods,
     get_faasm_invoke_host_port,
     get_faasm_upload_host_port,
-    get_faasm_hoststats_proxy_ip,
+    get_knative_headers,
 )
 from tasks.util import (
     RESULTS_DIR,
@@ -53,8 +53,6 @@ USA_TERRITORIES = [
 
 NIGERIA = ["Nigeria"]
 # -----------------------------------
-
-KNATIVE_HEADERS = {"Host": "faasm-worker.faasm.example.com"}
 
 
 def get_wpop_filename(country):
@@ -173,9 +171,13 @@ def faasm(
     result_file = join(RESULTS_DIR, "covid_wasm_{}.csv".format(country))
     write_csv_header(result_file)
 
-    pod_names, pod_ips = get_faasm_worker_pods()
-    proxy_ip = get_faasm_hoststats_proxy_ip()
-    stats = HostStats(pod_ips, proxy=proxy_ip)
+    pod_names = get_faasm_worker_pods()
+    stats = HostStats(
+        pod_names,
+        kubectl=True,
+        kubectl_container="user-container",
+        kubectl_ns="faasm",
+    )
 
     if threads:
         threads_list = [threads]
@@ -208,7 +210,8 @@ def faasm(
 
             # Invoke
             print("Posting to {}".format(url))
-            response = requests.post(url, json=msg, headers=KNATIVE_HEADERS)
+            headers = get_knative_headers()
+            response = requests.post(url, json=msg, headers=headers)
 
             if response.status_code != 200:
                 print(
@@ -232,7 +235,9 @@ def faasm(
                     "id": msg_id,
                 }
                 response = requests.post(
-                    url, json=status_msg, headers=KNATIVE_HEADERS
+                    url,
+                    json=status_msg,
+                    headers=headers,
                 )
 
                 print(response.text)

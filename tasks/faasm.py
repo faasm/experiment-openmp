@@ -1,9 +1,6 @@
 from configparser import ConfigParser
-from subprocess import run, PIPE
 from os.path import expanduser, join, exists
-import json
 
-from tasks.util import PROJ_ROOT
 
 FAASM_INI_FILE = join(expanduser("~"), ".config", "faasm.ini")
 
@@ -36,54 +33,14 @@ def get_faasm_invoke_host_port():
     return host, port
 
 
-def get_faasm_hoststats_proxy_ip():
-    res = run(
-        "kubectl -n faasm get service hoststats-proxy -o json",
-        stdout=PIPE,
-        stderr=PIPE,
-        cwd=PROJ_ROOT,
-        shell=True,
-        check=True,
-    )
-
-    data = json.loads(res.stdout.decode("utf-8"))
-    ip = data["spec"]["clusterIP"]
-    print("Got hoststats proxy IP {}".format(ip))
-    return ip
-
-
 def get_faasm_worker_pods():
-    kubecmd = [
-        "kubectl",
-        "-n faasm",
-        "get pods",
-        "-l serving.knative.dev/service=faasm-worker",
-        "-o wide",
-    ]
+    pods = get_faasm_ini_value("Faasm", "worker_names")
+    pods = [p.strip() for p in pods.split(",") if p.strip()]
 
-    kubecmd = " ".join(kubecmd)
-    print(kubecmd)
-    res = run(
-        kubecmd,
-        stdout=PIPE,
-        stderr=PIPE,
-        shell=True,
-        check=True,
-    )
+    print("Using faasm worker pods: {}".format(pods))
+    return pods
 
-    cmd_out = res.stdout.decode("utf-8")
 
-    # Split output into list of strings
-    lines = cmd_out.split("\n")[1:]
-    lines = [l.strip() for l in lines if l.strip()]
-
-    pod_names = list()
-    pod_ips = list()
-    for line in lines:
-        line_parts = line.split(" ")
-        line_parts = [p.strip() for p in line_parts if p.strip()]
-
-        pod_names.append(line_parts[0])
-        pod_ips.append(line_parts[5])
-
-    return pod_names, pod_ips
+def get_knative_headers():
+    knative_host = get_faasm_ini_value("Faasm", "knative_host")
+    return {"Host": knative_host}

@@ -3,6 +3,7 @@ from multiprocessing import cpu_count
 from subprocess import run, PIPE, STDOUT
 from os.path import join
 from os import makedirs
+import pprint
 import requests
 import re
 import time
@@ -95,7 +96,7 @@ def get_cmdline_args(country, n_threads, data_dir):
         "/PP:{}/param_files/preUK_R0=2.0.txt".format(data_dir),
         "/P:{}/param_files/p_NoInt.txt".format(data_dir),
         "/O:/tmp/{}_NoInt_R0=3.0".format(country),
-        "/D:/{}/populations/{}".format(data_dir, wpop_file),
+        "/D:{}/populations/{}".format(data_dir, wpop_file),
         "/M:/tmp/{}_pop_density.bin".format(country),
         "/S:/tmp/Network_{}_T1_R3.0.bin".format(country),
         "/R:1.5 98798150 729101 17389101 4797132",
@@ -210,6 +211,8 @@ def faasm(
 
             # Invoke
             print("Posting to {}".format(url))
+            pprint.pprint(msg)
+
             headers = get_knative_headers()
             response = requests.post(url, json=msg, headers=headers)
 

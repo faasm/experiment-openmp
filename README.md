@@ -41,6 +41,18 @@ inv wasm.upload
 inv run.faasm
 ```
 
+### Local dev setup
+
+To run against a local development cluster, set one up according to the
+[docs](https://github.com/faasm/faasm/blob/master/docs/development.md).
+
+Make sure your local `faasm.ini` file is then updated to run locally:
+
+```bash
+# In faasm-cli
+inv knative.ini-file --local
+```
+
 ## Running natively
 
 To run the native version locally, you can build the code within the container:

@@ -1,4 +1,4 @@
-FROM faasm/cpp-sysroot:0.0.26
+FROM faasm/cpp-sysroot:0.1.1
 
 # Install hoststats
 RUN pip3 install hoststats

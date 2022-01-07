@@ -7,6 +7,9 @@ DATA_DIR = join(COVID_DIR, "data")
 NATIVE_BUILD_DIR = join(PROJ_ROOT, "build", "native")
 WASM_BUILD_DIR = join(PROJ_ROOT, "build", "wasm")
 
+FAASM_LOCAL_DIR = "/usr/local/faasm"
+FAASM_WASM_DIR = join(FAASM_LOCAL_DIR, "wasm")
+
 EXPERIMENTS_BASE_DIR = dirname(dirname(PROJ_ROOT))
 
 FAASM_USER = "cov"

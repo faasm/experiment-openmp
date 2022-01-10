@@ -8,13 +8,12 @@ from subprocess import run
 from tasks.faasm import get_faasm_upload_host_port
 from tasks.util import (
     COVID_DIR,
+    CMAKE_TOOLCHAIN_FILE,
     WASM_BUILD_DIR,
     FAASM_USER,
     FAASM_FUNC,
     FAASM_WASM_DIR,
 )
-
-CMAKE_TOOLCHAIN_FILE = "/usr/local/faasm/toolchain/tools/WasiToolchain.cmake"
 
 
 @task(default=True)

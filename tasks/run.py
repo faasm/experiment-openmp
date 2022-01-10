@@ -90,11 +90,15 @@ def get_data_files(country):
 def get_cmdline_args(country, n_threads, data_dir):
     wpop_file = get_wpop_filename(country)
 
+    num_realisations = 5
+
     return [
         "/c:{}".format(n_threads),
         "/A:{}/admin_units/{}_admin.txt".format(data_dir, country),
+        "/NR:{}".format(num_realisations),
         "/PP:{}/param_files/preUK_R0=2.0.txt".format(data_dir),
-        "/P:{}/param_files/p_NoInt.txt".format(data_dir),
+#        "/P:{}/param_files/p_NoInt.txt".format(data_dir),
+        "/P:{}/param_files/p_PC7_CI_HQ_SD.txt".format(data_dir),
         "/O:/tmp/{}_NoInt_R0=3.0".format(country),
         "/D:{}/populations/{}".format(data_dir, wpop_file),
         "/M:/tmp/{}_pop_density.bin".format(country),
@@ -299,7 +303,7 @@ def native(
     write_csv_header(result_file)
 
     if threads:
-        threads_list = [threads]
+        threads_list = [int(threads)]
     else:
         threads_list = list(range(int(resume), NUM_CORES + 1))
 

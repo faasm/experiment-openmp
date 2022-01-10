@@ -15,6 +15,27 @@ To check things are working:
 inv -l
 ```
 
+## Local dev setup
+
+To run against a local Faasm development cluster, set one up according to the
+[docs](https://github.com/faasm/faasm/blob/master/docs/development.md).
+
+Make sure your local `faasm.ini` file is then updated to run locally:
+
+```bash
+# In faasm-cli
+inv knative.ini-file --local
+```
+
+## Countries
+
+To list which countries are available and what their populations are:
+
+```bash
+inv native.unzip
+inv native.countries
+```
+
 ## Running on Faasm
 
 The code must be built from within the experiment container:
@@ -39,18 +60,6 @@ inv wasm.upload
 
 # Run
 inv run.faasm
-```
-
-### Local dev setup
-
-To run against a local development cluster, set one up according to the
-[docs](https://github.com/faasm/faasm/blob/master/docs/development.md).
-
-Make sure your local `faasm.ini` file is then updated to run locally:
-
-```bash
-# In faasm-cli
-inv knative.ini-file --local
 ```
 
 ## Running natively

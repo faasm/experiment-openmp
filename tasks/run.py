@@ -286,6 +286,7 @@ def native(
     threads=None,
     repeats=NUM_REPEATS,
     resume=1,
+    reverse=False,
 ):
     """
     Runs the native experiment
@@ -300,7 +301,16 @@ def native(
     if threads:
         threads_list = [threads]
     else:
-        threads_list = range(int(resume), NUM_CORES + 1)
+        threads_list = list(range(int(resume), NUM_CORES + 1))
+
+    if reverse:
+        threads_list.reverse()
+
+    print(
+        "Running for {} with {} repeats on {} threads".format(
+            country, repeats, threads_list
+        )
+    )
 
     # Run experiments
     for n_threads in threads_list:

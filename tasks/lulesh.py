@@ -1,23 +1,43 @@
 from subprocess import run
 from invoke import task
-from os import makedirs, listdir
+import time
+import os
+from copy import copy
+
+from multiprocessing import cpu_count
+from os import makedirs
 from os.path import exists, join
 from shutil import rmtree
 from subprocess import run
 
-from os.path import join
-
-from invoke import task
 
 from tasks.util import (
     PROJ_ROOT,
     CMAKE_TOOLCHAIN_FILE,
-    FAASM_WASM_DIR
+    FAASM_WASM_DIR,
+    RESULTS_DIR,
 )
 
 LULESH_NATIVE_BUILD_DIR = join(PROJ_ROOT, "build", "lulesh", "native")
 LULESH_WASM_BUILD_DIR = join(PROJ_ROOT, "build", "lulesh", "wasm")
 LULESH_DIR = join(PROJ_ROOT, "third-party", "lulesh")
+
+NATIVE_BINARY = join(LULESH_NATIVE_BUILD_DIR, "lulesh2.0")
+WASM_USER = "lulesh"
+WASM_FUNC = "func"
+
+NUM_CORES = cpu_count()
+NUM_REPEATS = 3
+
+# These are the parameters for the LULESH executable. See defaults at
+# https://github.com/LLNL/LULESH/blob/master/lulesh.cc#L2681
+# and translation from cmdline args at
+# https://github.com/LLNL/LULESH/blob/master/lulesh_tuple.h#L565
+ITERATIONS = 9999999
+CUBE_SIZE = 40
+REGIONS = 11
+BALANCE = 1
+COST = 1
 
 
 @task
@@ -86,8 +106,63 @@ def wasm(ctx, clean=False):
     # Also copy into place locally
     wasm_file = join(LULESH_WASM_BUILD_DIR, "lulesh2.0")
     if exists(FAASM_WASM_DIR):
-        target_dir = join(FAASM_WASM_DIR, "lulesh", "func")
+        target_dir = join(FAASM_WASM_DIR, WASM_USER, WASM_FUNC)
         makedirs(target_dir, exist_ok=True)
         target_file = join(target_dir, "function.wasm")
         run("cp {} {}".format(wasm_file, target_file), shell=True, check=True)
         print("Copied wasm into place at {}".format(target_file))
+
+
+@task
+def run_native(
+    ctx,
+    repeats=NUM_REPEATS,
+    threads=None,
+    resume=1,
+    reverse=False,
+):
+    if threads:
+        threads_list = [int(threads)]
+    else:
+        threads_list = list(range(int(resume), NUM_CORES + 1))
+
+    if reverse:
+        threads_list.reverse()
+
+    print(
+        "Running native LULESH with {} repeats on threads: {}".format(
+            repeats, threads_list
+        )
+    )
+
+    for n_threads in threads_list:
+        for run_idx in range(repeats):
+            print(
+                "Run {}/{} with {} threads".format(
+                    run_idx + 1, repeats, n_threads
+                )
+            )
+
+            # Set number of threads with environment variable natively
+            env = copy(os.environ)
+            env["OMP_NUM_THREADS"] = str(n_threads)
+
+            # Build up list of commandline args
+            cmd = [
+                NATIVE_BINARY,
+                "-i {}".format(ITERATIONS),
+                "-s {}".format(CUBE_SIZE),
+                "-r {}".format(REGIONS),
+                "-c {}".format(COST),
+                "-b {}".format(BALANCE),
+            ]
+
+            cmd_string = " ".join(cmd)
+
+            # Start timer and host stats collection
+            start_time = time.time()
+            run(cmd_string, check=True, shell=True, env=env)
+
+            end_time = time.time() - start_time
+
+            print("{} threads finished. Time {}".format(n_threads, end_time))

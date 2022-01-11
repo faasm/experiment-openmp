@@ -92,13 +92,17 @@ def get_cmdline_args(country, n_threads, data_dir):
 
     num_realisations = 5
 
+    # Can't tell what difference this makes, some examples in source
+    pre_param_file = "{}/param_files/preUK_R0=2.0.txt".format(data_dir)
+    # param_file = "/P:{}/param_files/p_NoInt.txt".format(data_dir)
+    param_file = "{}/param_files/p_PC7_CI_HQ_SD.txt".format(data_dir)
+
     return [
         "/c:{}".format(n_threads),
         "/A:{}/admin_units/{}_admin.txt".format(data_dir, country),
         "/NR:{}".format(num_realisations),
-        "/PP:{}/param_files/preUK_R0=2.0.txt".format(data_dir),
-#        "/P:{}/param_files/p_NoInt.txt".format(data_dir),
-        "/P:{}/param_files/p_PC7_CI_HQ_SD.txt".format(data_dir),
+        "/PP:{}".format(pre_param_file),
+        "/P:{}".format(param_file),
         "/O:/tmp/{}_NoInt_R0=3.0".format(country),
         "/D:{}/populations/{}".format(data_dir, wpop_file),
         "/M:/tmp/{}_pop_density.bin".format(country),
@@ -311,7 +315,7 @@ def native(
         threads_list.reverse()
 
     print(
-        "Running for {} with {} repeats on {} threads".format(
+        "Running for {} with {} repeats on threads: {}".format(
             country, repeats, threads_list
         )
     )

@@ -1,6 +1,7 @@
 from subprocess import run
 from invoke import task
 import time
+import requests
 import os
 from copy import copy
 
@@ -10,6 +11,7 @@ from os.path import exists, join
 from shutil import rmtree
 from subprocess import run
 
+from tasks.faasm import get_faasm_upload_host_port
 
 from tasks.util import (
     PROJ_ROOT,
@@ -23,6 +25,7 @@ LULESH_WASM_BUILD_DIR = join(PROJ_ROOT, "build", "lulesh", "wasm")
 LULESH_DIR = join(PROJ_ROOT, "third-party", "lulesh")
 
 NATIVE_BINARY = join(LULESH_NATIVE_BUILD_DIR, "lulesh2.0")
+WASM_BINARY = join(LULESH_WASM_BUILD_DIR, "lulesh2.0")
 WASM_USER = "lulesh"
 WASM_FUNC = "func"
 
@@ -104,13 +107,24 @@ def wasm(ctx, clean=False):
     )
 
     # Also copy into place locally
-    wasm_file = join(LULESH_WASM_BUILD_DIR, "lulesh2.0")
     if exists(FAASM_WASM_DIR):
         target_dir = join(FAASM_WASM_DIR, WASM_USER, WASM_FUNC)
         makedirs(target_dir, exist_ok=True)
         target_file = join(target_dir, "function.wasm")
-        run("cp {} {}".format(wasm_file, target_file), shell=True, check=True)
+        run(
+            "cp {} {}".format(WASM_BINARY, target_file), shell=True, check=True
+        )
         print("Copied wasm into place at {}".format(target_file))
+
+
+@task
+def upload(ctx):
+    host, port = get_faasm_upload_host_port()
+
+    url = "http://{}:{}/f/{}/{}".format(host, port, WASM_USER, WASM_FUNC)
+    response = requests.put(url, data=open(WASM_BINARY, "rb"))
+
+    print("Response {}: {}".format(response.status_code, response.text))
 
 
 @task
@@ -158,6 +172,7 @@ def run_native(
             ]
 
             cmd_string = " ".join(cmd)
+            print(cmd_string)
 
             # Start timer and host stats collection
             start_time = time.time()
@@ -166,3 +181,13 @@ def run_native(
             end_time = time.time() - start_time
 
             print("{} threads finished. Time {}".format(n_threads, end_time))
+
+
+@task
+def upload(ctx):
+    host, port = get_faasm_upload_host_port()
+
+    url = "http://{}:{}/f/{}/{}".format(host, port, WASM_USER, WASM_FUNC)
+    response = requests.put(url, data=open(WASM_BINARY, "rb"))
+
+    print("Response {}: {}".format(response.status_code, response.text))

@@ -17,7 +17,7 @@ from tasks.util import (
     PROJ_ROOT,
 )
 
-MAX_THREADS = 40
+MAX_THREADS = 45
 
 LULESH_USER = "lulesh"
 LULESH_FUNC = "func"
@@ -41,11 +41,13 @@ def write_result_line(result_file, threads, iteration, actual, reported):
         out_file.write(result_line)
 
 
-ITERATIONS = 500
+ITERATIONS = 50
 CUBE_SIZE = 20
 REGIONS = 11
 BALANCE = 1
 COST = 1
+
+MESSAGE_TYPE_FLUSH = 3
 
 
 @task
@@ -57,13 +59,13 @@ def plot(ctx, headless=False):
 
     filenames.sort()
 
+    results = list()
     for f in filenames:
         t = f.replace("lulesh_wasm_", "")
         t = t.replace(".csv", "")
 
         # Read in the file
         file_path = join(LULESH_RESULTS_DIR, f)
-        results = list()
         a = list()
         r = list()
         with open(file_path, "r") as fh:
@@ -78,11 +80,12 @@ def plot(ctx, headless=False):
                 a.append(float(parts[2]))
                 r.append(float(parts[3]))
 
-        results.append((int(t), np.median(a), np.median(r), np.std(r)))
+        result = (int(t), np.median(a), np.median(r), np.median(r))
+        results.append(result)
 
     results.sort(key=lambda x: x[0])
-    for i, t in enumerate(results):
-        print("{}: {} threads {}s".format(i, t[0], t[2]))
+    for r in results:
+        print("{} threads {}s".format(r[0], r[2]))
 
     x = [r[0] for r in results]
     y = [r[2] for r in results]
@@ -100,32 +103,32 @@ def plot(ctx, headless=False):
 
 
 @task
-def run(
-    ctx,
-    repeats=3,
-    threads=None,
-    resume=1,
-):
+def run(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
     host, port = get_faasm_invoke_host_port()
 
     url = "http://{}:{}".format(host, port)
 
-    if threads:
-        threads_list = [threads]
-    else:
-        threads_list = range(int(resume), MAX_THREADS)
+    threads_list = range(int(start), int(end), step)
 
     if not exists(LULESH_RESULTS_DIR):
         makedirs(LULESH_RESULTS_DIR)
 
     # Run experiments
+    headers = get_knative_headers()
     for n_threads in threads_list:
         print("Running Lulesh with {} threads".format(n_threads))
+
+        # Start with a flush
+        print("Flushing")
+        msg = {"type": MESSAGE_TYPE_FLUSH}
+        response = requests.post(url, json=msg, headers=headers, timeout=None)
 
         result_file = join(
             LULESH_RESULTS_DIR, "lulesh_wasm_{}.csv".format(n_threads)
         )
-        write_csv_header(result_file)
+
+        if not exists(result_file):
+            write_csv_header(result_file)
 
         for run_idx in range(repeats):
             cmdline = [
@@ -155,7 +158,6 @@ def run(
             print("Posting to {}".format(url))
             pprint.pprint(msg)
 
-            headers = get_knative_headers()
             response = requests.post(url, json=msg, headers=headers)
 
             if response.status_code != 200:

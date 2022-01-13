@@ -36,8 +36,8 @@ NUM_REPEATS = 3
 # https://github.com/LLNL/LULESH/blob/master/lulesh.cc#L2681
 # and translation from cmdline args at
 # https://github.com/LLNL/LULESH/blob/master/lulesh_tuple.h#L565
-ITERATIONS = 9999999
-CUBE_SIZE = 40
+ITERATIONS = 1000
+CUBE_SIZE = 20
 REGIONS = 11
 BALANCE = 1
 COST = 1

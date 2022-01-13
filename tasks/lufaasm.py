@@ -14,7 +14,7 @@ from tasks.faasm import (
     get_knative_headers,
 )
 from tasks.util import (
-    PROJ_ROOT,
+    EXPERIMENTS_BASE_DIR,
 )
 
 MAX_THREADS = 45
@@ -22,8 +22,8 @@ MAX_THREADS = 45
 LULESH_USER = "lulesh"
 LULESH_FUNC = "func"
 
-LULESH_RESULTS_DIR = join(PROJ_ROOT, "results", "lulesh")
-LULESH_PLOTS_DIR = join(PROJ_ROOT, "plots")
+LULESH_RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "lulesh")
+LULESH_PLOTS_DIR = join(EXPERIMENTS_BASE_DIR, "plots")
 LULESH_PLOT_FILE = join(LULESH_PLOTS_DIR, "lulesh.png")
 
 

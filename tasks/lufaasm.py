@@ -1,7 +1,9 @@
 from invoke import task
 from os.path import join
 import numpy as np
-from os import makedirs, exists, listdir
+import matplotlib.pyplot as plt
+from os import makedirs, listdir
+from os.path import exists
 import pprint
 import requests
 import time
@@ -12,7 +14,7 @@ from tasks.faasm import (
     get_knative_headers,
 )
 from tasks.util import (
-    RESULTS_DIR,
+    PROJ_ROOT,
 )
 
 MAX_THREADS = 40
@@ -20,16 +22,18 @@ MAX_THREADS = 40
 LULESH_USER = "lulesh"
 LULESH_FUNC = "func"
 
-LULESH_RESULTS_DIR = join(RESULTS_DIR, "lulesh")
+LULESH_RESULTS_DIR = join(PROJ_ROOT, "results", "lulesh")
+LULESH_PLOTS_DIR = join(PROJ_ROOT, "plots")
+LULESH_PLOT_FILE = join(LULESH_PLOTS_DIR, "lulesh.png")
 
 
 def write_csv_header(result_file):
-    makedirs(RESULTS_DIR, exist_ok=True)
     with open(result_file, "w") as out_file:
         out_file.write("Threads,Iteration,Actual,Reported\n")
 
 
 def write_result_line(result_file, threads, iteration, actual, reported):
+    print("Writing result to {}".format(result_file))
     with open(result_file, "a") as out_file:
         result_line = "{},{},{},{}\n".format(
             threads, iteration, actual, reported
@@ -37,7 +41,7 @@ def write_result_line(result_file, threads, iteration, actual, reported):
         out_file.write(result_line)
 
 
-ITERATIONS = 50
+ITERATIONS = 500
 CUBE_SIZE = 20
 REGIONS = 11
 BALANCE = 1
@@ -45,22 +49,21 @@ COST = 1
 
 
 @task
-def plot(ctx):
-    # Get files
+def plot(ctx, headless=False):
+    if not exists(LULESH_PLOTS_DIR):
+        makedirs(LULESH_PLOTS_DIR)
+
     filenames = listdir(LULESH_RESULTS_DIR)
 
-    actuals = list()
-    reporteds = list()
-    errors = list()
-    threads = list()
+    filenames.sort()
 
     for f in filenames:
         t = f.replace("lulesh_wasm_", "")
         t = t.replace(".csv", "")
-        threads.append(int(t))
 
         # Read in the file
         file_path = join(LULESH_RESULTS_DIR, f)
+        results = list()
         a = list()
         r = list()
         with open(file_path, "r") as fh:
@@ -75,10 +78,25 @@ def plot(ctx):
                 a.append(float(parts[2]))
                 r.append(float(parts[3]))
 
-        errors.append(np.std(r))
-        actuals.append(np.median(a))
-        reporteds.append(np.median(r))
+        results.append((int(t), np.median(a), np.median(r), np.std(r)))
 
+    results.sort(key=lambda x: x[0])
+    for i, t in enumerate(results):
+        print("{}: {} threads {}s".format(i, t[0], t[2]))
+
+    x = [r[0] for r in results]
+    y = [r[2] for r in results]
+    e = [r[3] for r in results]
+    plt.errorbar(x, y, yerr=e, label="Faabric")
+
+    ax = plt.gca()
+    ax.set_ylabel("Runtime (s)")
+
+    plt.tight_layout()
+    plt.savefig(LULESH_PLOT_FILE, format="png")
+
+    if not headless:
+        plt.show()
 
 
 @task

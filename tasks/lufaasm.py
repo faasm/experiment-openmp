@@ -1,6 +1,7 @@
 from invoke import task
 from os.path import join
-from os import makedirs
+import numpy as np
+from os import makedirs, exists, listdir
 import pprint
 import requests
 import time
@@ -19,11 +20,13 @@ MAX_THREADS = 40
 LULESH_USER = "lulesh"
 LULESH_FUNC = "func"
 
+LULESH_RESULTS_DIR = join(RESULTS_DIR, "lulesh")
+
 
 def write_csv_header(result_file):
     makedirs(RESULTS_DIR, exist_ok=True)
     with open(result_file, "w") as out_file:
-        out_file.write("Threads,Iteration,Run,Actual,Reported\n")
+        out_file.write("Threads,Iteration,Actual,Reported\n")
 
 
 def write_result_line(result_file, threads, iteration, actual, reported):
@@ -34,11 +37,48 @@ def write_result_line(result_file, threads, iteration, actual, reported):
         out_file.write(result_line)
 
 
-ITERATIONS = 5
-CUBE_SIZE = 10
+ITERATIONS = 50
+CUBE_SIZE = 20
 REGIONS = 11
 BALANCE = 1
 COST = 1
+
+
+@task
+def plot(ctx):
+    # Get files
+    filenames = listdir(LULESH_RESULTS_DIR)
+
+    actuals = list()
+    reporteds = list()
+    errors = list()
+    threads = list()
+
+    for f in filenames:
+        t = f.replace("lulesh_wasm_", "")
+        t = t.replace(".csv", "")
+        threads.append(int(t))
+
+        # Read in the file
+        file_path = join(LULESH_RESULTS_DIR, f)
+        a = list()
+        r = list()
+        with open(file_path, "r") as fh:
+            for line in fh:
+                if line.startswith("Threads"):
+                    continue
+
+                if not line.strip():
+                    continue
+
+                parts = line.split(",")
+                a.append(float(parts[2]))
+                r.append(float(parts[3]))
+
+        errors.append(np.std(r))
+        actuals.append(np.median(a))
+        reporteds.append(np.median(r))
+
 
 
 @task
@@ -51,17 +91,23 @@ def run(
     host, port = get_faasm_invoke_host_port()
 
     url = "http://{}:{}".format(host, port)
-    result_file = join(RESULTS_DIR, "lulesh_wasm.csv")
-    write_csv_header(result_file)
 
     if threads:
         threads_list = [threads]
     else:
         threads_list = range(int(resume), MAX_THREADS)
 
+    if not exists(LULESH_RESULTS_DIR):
+        makedirs(LULESH_RESULTS_DIR)
+
     # Run experiments
     for n_threads in threads_list:
         print("Running Lulesh with {} threads".format(n_threads))
+
+        result_file = join(
+            LULESH_RESULTS_DIR, "lulesh_wasm_{}.csv".format(n_threads)
+        )
+        write_csv_header(result_file)
 
         for run_idx in range(repeats):
             cmdline = [

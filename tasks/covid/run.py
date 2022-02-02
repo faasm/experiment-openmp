@@ -15,6 +15,7 @@ from tasks.faasm import (
     get_faasm_upload_host_port,
     get_knative_headers,
 )
+
 from tasks.util import (
     RESULTS_DIR,
     COVID_DIR,

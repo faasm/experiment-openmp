@@ -40,6 +40,9 @@ def build(ctx, clean=False):
 
 @task
 def countries(ctx):
+    """
+    List the countries supported by the simulation
+    """
     admin_dir = join(DATA_DIR, "admin_units")
     admin_files = listdir(admin_dir)
 

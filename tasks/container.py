@@ -4,7 +4,7 @@ from os import environ
 from copy import copy
 from subprocess import run
 
-IMAGE_NAME = "experiment-covid"
+IMAGE_NAME = "experiment-openmp"
 
 
 @task(default=True)

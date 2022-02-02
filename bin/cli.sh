@@ -14,8 +14,8 @@ if [[ -z "$FAASM_LOCAL_DIR" ]]; then
     exit 1
 fi
 
-if [[ -z "$COVID_CLI_IMAGE" ]]; then
-    export COVID_CLI_IMAGE=faasm/experiment-covid:${VERSION}
+if [[ -z "$OPENMP_CLI_IMAGE" ]]; then
+    export OPENMP_CLI_IMAGE=faasm/experiment-openmp:${VERSION}
 fi
 
 INNER_SHELL=${SHELL:-"/bin/bash"}
@@ -23,7 +23,7 @@ INNER_SHELL=${SHELL:-"/bin/bash"}
 docker-compose \
     run \
     --rm \
-    covid-cli \
+    openmp-cli \
     ${INNER_SHELL}
 
 popd > /dev/null

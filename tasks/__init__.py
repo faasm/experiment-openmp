@@ -1,17 +1,17 @@
 from invoke import Collection
 
 from . import container
-from . import lufaasm
-from . import lulesh
-from . import native
-from . import run
-from . import wasm
+
+import logging
+
+from tasks.covid import ns as covid_ns
+from tasks.lulesh import ns as lulesh_ns
+
+logging.getLogger().setLevel(logging.DEBUG)
 
 ns = Collection(
     container,
-    lufaasm,
-    lulesh,
-    native,
-    run,
-    wasm,
 )
+
+ns.add_collection(lulesh_ns, name="lulesh")
+ns.add_collection(covid_ns, name="covid")

@@ -1,8 +1,6 @@
 from invoke import task
 from os.path import join
-import numpy as np
-import matplotlib.pyplot as plt
-from os import makedirs, listdir
+from os import makedirs
 from os.path import exists
 import pprint
 import requests
@@ -23,8 +21,6 @@ LULESH_USER = "lulesh"
 LULESH_FUNC = "func"
 
 LULESH_RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "lulesh")
-LULESH_PLOTS_DIR = join(EXPERIMENTS_BASE_DIR, "plots")
-LULESH_PLOT_FILE = join(LULESH_PLOTS_DIR, "lulesh.png")
 
 
 def write_csv_header(result_file):
@@ -48,58 +44,6 @@ BALANCE = 1
 COST = 1
 
 MESSAGE_TYPE_FLUSH = 3
-
-
-@task
-def plot(ctx, headless=False):
-    if not exists(LULESH_PLOTS_DIR):
-        makedirs(LULESH_PLOTS_DIR)
-
-    filenames = listdir(LULESH_RESULTS_DIR)
-
-    filenames.sort()
-
-    results = list()
-    for f in filenames:
-        t = f.replace("lulesh_wasm_", "")
-        t = t.replace(".csv", "")
-
-        # Read in the file
-        file_path = join(LULESH_RESULTS_DIR, f)
-        a = list()
-        r = list()
-        with open(file_path, "r") as fh:
-            for line in fh:
-                if line.startswith("Threads"):
-                    continue
-
-                if not line.strip():
-                    continue
-
-                parts = line.split(",")
-                a.append(float(parts[2]))
-                r.append(float(parts[3]))
-
-        result = (int(t), np.median(a), np.median(r), np.median(r))
-        results.append(result)
-
-    results.sort(key=lambda x: x[0])
-    for r in results:
-        print("{} threads {}s".format(r[0], r[2]))
-
-    x = [r[0] for r in results]
-    y = [r[2] for r in results]
-    e = [r[3] for r in results]
-    plt.errorbar(x, y, yerr=e, label="Faabric")
-
-    ax = plt.gca()
-    ax.set_ylabel("Runtime (s)")
-
-    plt.tight_layout()
-    plt.savefig(LULESH_PLOT_FILE, format="png")
-
-    if not headless:
-        plt.show()
 
 
 @task

@@ -9,7 +9,6 @@ from multiprocessing import cpu_count
 from os import makedirs
 from os.path import exists, join
 from shutil import rmtree
-from subprocess import run
 
 from tasks.faasm import get_faasm_upload_host_port
 
@@ -17,7 +16,6 @@ from tasks.util import (
     PROJ_ROOT,
     CMAKE_TOOLCHAIN_FILE,
     FAASM_WASM_DIR,
-    RESULTS_DIR,
 )
 
 LULESH_NATIVE_BUILD_DIR = join(PROJ_ROOT, "build", "lulesh", "native")

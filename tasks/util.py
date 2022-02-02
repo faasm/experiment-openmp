@@ -15,6 +15,9 @@ DATA_DIR = join(COVID_DIR, "data")
 NATIVE_BUILD_DIR = join(PROJ_ROOT, "build", "native")
 WASM_BUILD_DIR = join(PROJ_ROOT, "build", "wasm")
 
+PLOTS_ROOT = join(PROJ_ROOT, "plots")
+PLOTS_FORMAT = "pdf"
+
 FAASM_LOCAL_DIR = "/usr/local/faasm"
 FAASM_WASM_DIR = join(FAASM_LOCAL_DIR, "wasm")
 

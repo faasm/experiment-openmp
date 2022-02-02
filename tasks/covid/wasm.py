@@ -6,9 +6,14 @@ from os import makedirs
 from subprocess import run
 
 from tasks.faasm import get_faasm_upload_host_port
-from tasks.util import COVID_DIR, WASM_BUILD_DIR, FAASM_USER, FAASM_FUNC
-
-CMAKE_TOOLCHAIN_FILE = "/usr/local/faasm/toolchain/tools/WasiToolchain.cmake"
+from tasks.util import (
+    COVID_DIR,
+    CMAKE_TOOLCHAIN_FILE,
+    WASM_BUILD_DIR,
+    FAASM_USER,
+    FAASM_FUNC,
+    FAASM_WASM_DIR,
+)
 
 
 @task(default=True)
@@ -42,9 +47,21 @@ def build(ctx, clean=False, verbose=False):
         cwd=WASM_BUILD_DIR,
     )
 
+    # Also copy into place locally
+    wasm_file = join(WASM_BUILD_DIR, "src", "CovidSim")
+    if exists(FAASM_WASM_DIR):
+        target_dir = join(FAASM_WASM_DIR, "cov", "sim")
+        makedirs(target_dir, exist_ok=True)
+        target_file = join(target_dir, "function.wasm")
+        run("cp {} {}".format(wasm_file, target_file), shell=True, check=True)
+        print("Copied wasm into place at {}".format(target_file))
+
 
 @task
 def upload(ctx):
+    """
+    Upload the wasm to Faasm
+    """
     host, port = get_faasm_upload_host_port()
     wasm_file = join(WASM_BUILD_DIR, "src", "CovidSim")
 

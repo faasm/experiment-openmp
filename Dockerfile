@@ -1,11 +1,11 @@
-FROM faasm/cpp-sysroot:0.0.26
+FROM faasm/cpp-sysroot:0.1.3
 
 # Install hoststats
 RUN pip3 install hoststats
 
 # Clone the code
-RUN git clone https://github.com/faasm/experiment-covid /code/experiment-covid
-WORKDIR /code/experiment-covid
+RUN git clone -b azure-2 https://github.com/faasm/experiment-openmp /code/experiment-openmp
+WORKDIR /code/experiment-openmp
 RUN git submodule update --init
 
 # Prepare data
@@ -17,4 +17,7 @@ RUN inv wasm
 # Native build
 RUN inv native
 
-CMD /code/experiment-covid/bin/entrypoint.sh
+# Build lulesh
+RUN inv lulesh.native
+
+CMD /code/experiment-openmp/bin/entrypoint.sh

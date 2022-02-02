@@ -3,6 +3,7 @@ from multiprocessing import cpu_count
 from subprocess import run, PIPE, STDOUT
 from os.path import join
 from os import makedirs
+import pprint
 import requests
 import re
 import time
@@ -14,6 +15,7 @@ from tasks.faasm import (
     get_faasm_upload_host_port,
     get_knative_headers,
 )
+
 from tasks.util import (
     RESULTS_DIR,
     COVID_DIR,
@@ -89,13 +91,21 @@ def get_data_files(country):
 def get_cmdline_args(country, n_threads, data_dir):
     wpop_file = get_wpop_filename(country)
 
+    num_realisations = 5
+
+    # Can't tell what difference this makes, some examples in source
+    pre_param_file = "{}/param_files/preUK_R0=2.0.txt".format(data_dir)
+    # param_file = "/P:{}/param_files/p_NoInt.txt".format(data_dir)
+    param_file = "{}/param_files/p_PC7_CI_HQ_SD.txt".format(data_dir)
+
     return [
         "/c:{}".format(n_threads),
         "/A:{}/admin_units/{}_admin.txt".format(data_dir, country),
-        "/PP:{}/param_files/preUK_R0=2.0.txt".format(data_dir),
-        "/P:{}/param_files/p_NoInt.txt".format(data_dir),
+        "/NR:{}".format(num_realisations),
+        "/PP:{}".format(pre_param_file),
+        "/P:{}".format(param_file),
         "/O:/tmp/{}_NoInt_R0=3.0".format(country),
-        "/D:/{}/populations/{}".format(data_dir, wpop_file),
+        "/D:{}/populations/{}".format(data_dir, wpop_file),
         "/M:/tmp/{}_pop_density.bin".format(country),
         "/S:/tmp/Network_{}_T1_R3.0.bin".format(country),
         "/R:1.5 98798150 729101 17389101 4797132",
@@ -210,6 +220,8 @@ def faasm(
 
             # Invoke
             print("Posting to {}".format(url))
+            pprint.pprint(msg)
+
             headers = get_knative_headers()
             response = requests.post(url, json=msg, headers=headers)
 
@@ -283,6 +295,7 @@ def native(
     threads=None,
     repeats=NUM_REPEATS,
     resume=1,
+    reverse=False,
 ):
     """
     Runs the native experiment
@@ -295,9 +308,18 @@ def native(
     write_csv_header(result_file)
 
     if threads:
-        threads_list = [threads]
+        threads_list = [int(threads)]
     else:
-        threads_list = range(int(resume), NUM_CORES + 1)
+        threads_list = list(range(int(resume), NUM_CORES + 1))
+
+    if reverse:
+        threads_list.reverse()
+
+    print(
+        "Running for {} with {} repeats on threads: {}".format(
+            country, repeats, threads_list
+        )
+    )
 
     # Run experiments
     for n_threads in threads_list:

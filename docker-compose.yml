@@ -2,7 +2,7 @@ version: "3"
 
 services:
   openmp-cli:
-    image: ${COVID_CLI_IMAGE}
+    image: ${OPENMP_CLI_IMAGE}
     working_dir: /code/experiment-openmp
     stdin_open: true
     tty: true

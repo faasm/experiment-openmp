@@ -1,11 +1,7 @@
 from subprocess import run
 from invoke import task
-import time
 import requests
-import os
-from copy import copy
 
-from multiprocessing import cpu_count
 from os import makedirs
 from os.path import exists, join
 from shutil import rmtree
@@ -26,9 +22,6 @@ NATIVE_BINARY = join(LULESH_NATIVE_BUILD_DIR, "lulesh2.0")
 WASM_BINARY = join(LULESH_WASM_BUILD_DIR, "lulesh2.0")
 WASM_USER = "lulesh"
 WASM_FUNC = "func"
-
-NUM_CORES = cpu_count()
-NUM_REPEATS = 3
 
 # These are the parameters for the LULESH executable. See defaults at
 # https://github.com/LLNL/LULESH/blob/master/lulesh.cc#L2681
@@ -124,68 +117,3 @@ def upload(ctx):
 
     print("Response {}: {}".format(response.status_code, response.text))
 
-
-@task
-def run_native(
-    ctx,
-    repeats=NUM_REPEATS,
-    threads=None,
-    resume=1,
-    reverse=False,
-):
-    if threads:
-        threads_list = [int(threads)]
-    else:
-        threads_list = list(range(int(resume), NUM_CORES + 1))
-
-    if reverse:
-        threads_list.reverse()
-
-    print(
-        "Running native LULESH with {} repeats on threads: {}".format(
-            repeats, threads_list
-        )
-    )
-
-    for n_threads in threads_list:
-        for run_idx in range(repeats):
-            print(
-                "Run {}/{} with {} threads".format(
-                    run_idx + 1, repeats, n_threads
-                )
-            )
-
-            # Set number of threads with environment variable natively
-            env = copy(os.environ)
-            env["OMP_NUM_THREADS"] = str(n_threads)
-
-            # Build up list of commandline args
-            cmd = [
-                NATIVE_BINARY,
-                "-i {}".format(ITERATIONS),
-                "-s {}".format(CUBE_SIZE),
-                "-r {}".format(REGIONS),
-                "-c {}".format(COST),
-                "-b {}".format(BALANCE),
-            ]
-
-            cmd_string = " ".join(cmd)
-            print(cmd_string)
-
-            # Start timer and host stats collection
-            start_time = time.time()
-            run(cmd_string, check=True, shell=True, env=env)
-
-            end_time = time.time() - start_time
-
-            print("{} threads finished. Time {}".format(n_threads, end_time))
-
-
-@task
-def upload(ctx):
-    host, port = get_faasm_upload_host_port()
-
-    url = "http://{}:{}/f/{}/{}".format(host, port, WASM_USER, WASM_FUNC)
-    response = requests.put(url, data=open(WASM_BINARY, "rb"))
-
-    print("Response {}: {}".format(response.status_code, response.text))

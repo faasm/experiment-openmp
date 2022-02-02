@@ -59,6 +59,9 @@ def build(ctx, clean=False, verbose=False):
 
 @task
 def upload(ctx):
+    """
+    Upload the wasm to Faasm
+    """
     host, port = get_faasm_upload_host_port()
     wasm_file = join(WASM_BUILD_DIR, "src", "CovidSim")
 

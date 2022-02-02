@@ -1,4 +1,6 @@
 from invoke import task
+from multiprocessing import cpu_count
+from subprocess import run
 from os.path import join
 from os import makedirs
 from os.path import exists
@@ -6,21 +8,28 @@ import pprint
 import requests
 import time
 import json
+import os
+from copy import copy
 
 from tasks.faasm import (
     get_faasm_invoke_host_port,
     get_knative_headers,
 )
 from tasks.util import (
-    EXPERIMENTS_BASE_DIR,
+    PROJ_ROOT,
+    RESULTS_DIR,
 )
 
 MAX_THREADS = 45
 
-LULESH_USER = "lulesh"
-LULESH_FUNC = "func"
+LULESH_NATIVE_BUILD_DIR = join(PROJ_ROOT, "build", "lulesh", "native")
+LULESH_WASM_BUILD_DIR = join(PROJ_ROOT, "build", "lulesh", "wasm")
+LULESH_DIR = join(PROJ_ROOT, "third-party", "lulesh")
 
-LULESH_RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "lulesh")
+NATIVE_BINARY = join(LULESH_NATIVE_BUILD_DIR, "lulesh2.0")
+WASM_BINARY = join(LULESH_WASM_BUILD_DIR, "lulesh2.0")
+WASM_USER = "lulesh"
+WASM_FUNC = "func"
 
 
 def write_csv_header(result_file):
@@ -45,17 +54,79 @@ COST = 1
 
 MESSAGE_TYPE_FLUSH = 3
 
+NUM_CORES = cpu_count()
+NUM_REPEATS = 3
+
 
 @task
-def run(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
+def native(
+    ctx,
+    repeats=NUM_REPEATS,
+    threads=None,
+    resume=1,
+    reverse=False,
+):
+    """
+    Run LULESH natively
+    """
+    if threads:
+        threads_list = [int(threads)]
+    else:
+        threads_list = list(range(int(resume), NUM_CORES + 1))
+
+    if reverse:
+        threads_list.reverse()
+
+    print(
+        "Running native LULESH with {} repeats on threads: {}".format(
+            repeats, threads_list
+        )
+    )
+
+    for n_threads in threads_list:
+        for run_idx in range(repeats):
+            print(
+                "Run {}/{} with {} threads".format(
+                    run_idx + 1, repeats, n_threads
+                )
+            )
+
+            # Set number of threads with environment variable natively
+            env = copy(os.environ)
+            env["OMP_NUM_THREADS"] = str(n_threads)
+
+            # Build up list of commandline args
+            cmd = [
+                NATIVE_BINARY,
+                "-i {}".format(ITERATIONS),
+                "-s {}".format(CUBE_SIZE),
+                "-r {}".format(REGIONS),
+                "-c {}".format(COST),
+                "-b {}".format(BALANCE),
+            ]
+
+            cmd_string = " ".join(cmd)
+            print(cmd_string)
+
+            # Start timer and host stats collection
+            start_time = time.time()
+            run(cmd_string, check=True, shell=True, env=env)
+
+            end_time = time.time() - start_time
+
+            print("{} threads finished. Time {}".format(n_threads, end_time))
+
+
+@task
+def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
     host, port = get_faasm_invoke_host_port()
 
     url = "http://{}:{}".format(host, port)
 
     threads_list = range(int(start), int(end), step)
 
-    if not exists(LULESH_RESULTS_DIR):
-        makedirs(LULESH_RESULTS_DIR)
+    if not exists(RESULTS_DIR):
+        makedirs(RESULTS_DIR)
 
     # Run experiments
     headers = get_knative_headers()
@@ -67,9 +138,7 @@ def run(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
         msg = {"type": MESSAGE_TYPE_FLUSH}
         response = requests.post(url, json=msg, headers=headers, timeout=None)
 
-        result_file = join(
-            LULESH_RESULTS_DIR, "lulesh_wasm_{}.csv".format(n_threads)
-        )
+        result_file = join(RESULTS_DIR, "lulesh_wasm_{}.csv".format(n_threads))
 
         if not exists(result_file):
             write_csv_header(result_file)
@@ -88,8 +157,8 @@ def run(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
 
             # Build message data
             msg = {
-                "user": LULESH_USER,
-                "function": LULESH_FUNC,
+                "user": WASM_USER,
+                "function": WASM_FUNC,
                 "input_data": input_data,
                 "cmdline": " ".join(cmdline),
                 "async": True,
@@ -120,8 +189,8 @@ def run(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
                 time.sleep(interval)
 
                 status_msg = {
-                    "user": LULESH_USER,
-                    "function": LULESH_FUNC,
+                    "user": WASM_USER,
+                    "function": WASM_FUNC,
                     "status": True,
                     "id": msg_id,
                 }

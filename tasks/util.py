@@ -21,17 +21,12 @@ PLOTS_FORMAT = "pdf"
 FAASM_LOCAL_DIR = "/usr/local/faasm"
 FAASM_WASM_DIR = join(FAASM_LOCAL_DIR, "wasm")
 
-EXPERIMENTS_BASE_DIR = dirname(dirname(PROJ_ROOT))
-
 FAASM_USER = "cov"
 FAASM_FUNC = "sim"
 
 IS_DOCKER = HOME_DIR.startswith("/root")
 
-if IS_DOCKER:
-    RESULTS_DIR = join(PROJ_ROOT, "results")
-else:
-    RESULTS_DIR = join(EXPERIMENTS_BASE_DIR, "results", "covid")
+RESULTS_DIR = join(PROJ_ROOT, "results")
 
 
 def get_version():

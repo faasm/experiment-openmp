@@ -80,6 +80,9 @@ def plot(ctx):
 
 @task
 def simple(ctx, headless=False):
+    """
+    Simple LULESH runtime plot
+    """
     if not exists(PLOTS_DIR):
         makedirs(PLOTS_DIR)
 

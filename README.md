@@ -36,9 +36,25 @@ inv container
 
 Runs [LULESH](https://github.com/LLNL/LULESH).
 
-## Running natively
+### Running natively
 
+```bash
+inv lulesh.build.native
 
+inv lulesh.run.native
+```
+
+### Running on Faasm
+
+```bash
+# Inside container
+inv lulesh.build.wasm
+
+# Outside container
+inv lulesh.build.upload
+
+inv lulesh.run.faasm
+```
 
 ## Covid Sim
 

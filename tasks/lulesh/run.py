@@ -119,6 +119,9 @@ def native(
 
 @task
 def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
+    """
+    Run LULESH experiment on Faasm
+    """
     host, port = get_faasm_invoke_host_port()
 
     url = "http://{}:{}".format(host, port)

@@ -5,4 +5,4 @@ from . import native
 from . import plot
 from . import run
 
-ns = Collection(wasm,native,plot, run)
+ns = Collection(wasm, native, plot, run)

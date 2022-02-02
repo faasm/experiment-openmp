@@ -116,4 +116,3 @@ def upload(ctx):
     response = requests.put(url, data=open(WASM_BINARY, "rb"))
 
     print("Response {}: {}".format(response.status_code, response.text))
-

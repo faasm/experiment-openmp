@@ -15,7 +15,7 @@ inv -l
 ## Local dev setup
 
 To run against a local Faasm development cluster, set one up according to the
-[docs](https://github.com/faasm/faasm/blob/master/docs/development.md).
+[docs](https://faasm.readthedocs.io/en/latest/source/development.html).
 
 Make sure your local `faasm.ini` file is then updated to run locally:
 

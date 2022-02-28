@@ -9,15 +9,14 @@ RUN git submodule update --init
 RUN pip3 install -r requirements.txt
 
 # Prepare data
-RUN inv native.unzip
+RUN inv covid.native.unzip
 
-# WebAssembly build
-RUN inv wasm
+# WebAssembly builds
+RUN inv covid.wasm
+RUN inv lulesh.build.wasm
 
 # Native build
-RUN inv native
-
-# Build lulesh
-RUN inv lulesh.native
+RUN inv covid.native
+RUN inv lulesh.build.native
 
 CMD /code/experiment-openmp/bin/entrypoint.sh

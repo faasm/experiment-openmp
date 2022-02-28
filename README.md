@@ -66,8 +66,8 @@ ICL.
 To list which countries are available and what their populations are:
 
 ```bash
-inv native.unzip
-inv native.countries
+inv covid.native.unzip
+inv covid.native.countries
 ```
 
 ### Running on Faasm

@@ -1,6 +1,3 @@
 [submodule "third-party/covid-sim"]
 	path = third-party/covid-sim
 	url = https://github.com/faasm/covid-sim
-[submodule "third-party/lulesh"]
-	path = third-party/lulesh
-	url = https://github.com/LLNL/LULESH

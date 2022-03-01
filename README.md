@@ -56,6 +56,30 @@ inv lulesh.build.upload
 inv lulesh.run.faasm
 ```
 
+## ParRes Kernels (OpenMP)
+
+Runs OpenMP kernels from [ParRes Kernels](https://github.com/ParRes/Kernels).
+
+### Running natively
+
+```bash
+inv kernels.build.native
+
+inv kernels.run.native
+```
+
+### Running on Faasm
+
+```bash
+# Inside container
+inv kernels.build.wasm
+
+# Outside container
+inv kernels.build.upload
+
+inv kernels.run.faasm
+```
+
 ## Covid Sim
 
 Based on the [Covid microsimulation](https://github.com/mrc-ide/covid-sim) from

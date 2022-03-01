@@ -26,7 +26,17 @@ from tasks.john.env import (
     WASM_USER,
 )
 
-from tasks.compile import CONFIG_CMD_FLAGS
+from tasks.compile import (
+    CONFIG_CMD_FLAGS,
+    WASM_SYSROOT,
+    WASM_CC,
+    WASM_CXX,
+    WASM_AR,
+    WASM_NM,
+    WASM_RANLIB,
+    WASM_CFLAGS,
+    WASM_LDFLAGS,
+)
 
 JOHN_ENV = {
     "OMP_NUM_THREADS": "2",
@@ -80,8 +90,22 @@ def wasm(ctx, clean=False):
     env = copy(os.environ)
     env = env.update(JOHN_ENV)
 
+    env.update(
+        {
+            "CFLAGS": " ".join(WASM_CFLAGS),
+            "CXXFLAGS": " ".join(WASM_CFLAGS),
+            "LDFLAGS": " ".join(WASM_LDFLAGS),
+            "NM": WASM_NM,
+            "AR": WASM_AR,
+            "RANLIB": WASM_RANLIB,
+            "CC": WASM_CC,
+            "CXX": WASM_CXX,
+        }
+    )
+
     configure_cmd = [
         "./configure",
+        "--prefix={}".format(WASM_SYSROOT),
         "--enable-werror CPPFLAGS=-DDYNAMIC_DISABLED",
     ]
     configure_cmd.extend(CONFIG_CMD_FLAGS)

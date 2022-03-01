@@ -11,10 +11,7 @@ import multiprocessing
 
 from tasks.faasm import get_faasm_upload_host_port
 
-from tasks.util import (
-    CMAKE_TOOLCHAIN_FILE,
-    FAASM_WASM_DIR,
-)
+from tasks.util import CMAKE_TOOLCHAIN_FILE, FAASM_WASM_DIR, WASM_SYSROOT
 
 from tasks.john.env import (
     JOHN_NATIVE_BUILD_DIR,
@@ -26,17 +23,7 @@ from tasks.john.env import (
     WASM_USER,
 )
 
-from tasks.compile import (
-    CONFIG_CMD_FLAGS,
-    WASM_SYSROOT,
-    WASM_CC,
-    WASM_CXX,
-    WASM_AR,
-    WASM_NM,
-    WASM_RANLIB,
-    WASM_CFLAGS,
-    WASM_LDFLAGS,
-)
+from tasks.compile import CONFIG_ENV
 
 JOHN_ENV = {
     "OMP_NUM_THREADS": "2",
@@ -55,7 +42,7 @@ def native(ctx, clean=False):
         run("make clean", check=True, shell=True, cwd=JOHN_SRC_DIR)
 
     env = copy(os.environ)
-    env = env.update(JOHN_ENV)
+    env.update(JOHN_ENV)
 
     configure_cmd = [
         "./configure",
@@ -67,16 +54,12 @@ def native(ctx, clean=False):
         shell=True,
         check=True,
         cwd=JOHN_SRC_DIR,
+        env=env,
     )
 
     n_cpus = multiprocessing.cpu_count()
     make_cmd = ["make -j {}".format(n_cpus - 1)]
-    run(
-        " ".join(make_cmd),
-        shell=True,
-        check=True,
-        cwd=JOHN_SRC_DIR,
-    )
+    run(" ".join(make_cmd), shell=True, check=True, cwd=JOHN_SRC_DIR, env=env)
 
 
 @task
@@ -88,45 +71,32 @@ def wasm(ctx, clean=False):
         run("make clean", check=True, shell=True, cwd=JOHN_SRC_DIR)
 
     env = copy(os.environ)
-    env = env.update(JOHN_ENV)
-
-    env.update(
-        {
-            "CFLAGS": " ".join(WASM_CFLAGS),
-            "CXXFLAGS": " ".join(WASM_CFLAGS),
-            "LDFLAGS": " ".join(WASM_LDFLAGS),
-            "NM": WASM_NM,
-            "AR": WASM_AR,
-            "RANLIB": WASM_RANLIB,
-            "CC": WASM_CC,
-            "CXX": WASM_CXX,
-        }
-    )
+    env.update(JOHN_ENV)
+    env.update(CONFIG_ENV)
 
     configure_cmd = [
         "./configure",
-        "--prefix={}".format(WASM_SYSROOT),
-        "--enable-werror CPPFLAGS=-DDYNAMIC_DISABLED",
+        "--prefix {}".format(WASM_SYSROOT),
+        "--without-openssl",
+        "--host wasm32-unknown-wasi",
+        "--build wasm32",
     ]
-    configure_cmd.extend(CONFIG_CMD_FLAGS)
     configure_cmd = " ".join(configure_cmd)
     print(configure_cmd)
 
     run(
-        " ".join(configure_cmd),
+        configure_cmd,
         shell=True,
         check=True,
         cwd=JOHN_SRC_DIR,
+        env=env,
     )
 
     n_cpus = multiprocessing.cpu_count()
     make_cmd = ["make -j {}".format(n_cpus - 1)]
-    run(
-        " ".join(make_cmd),
-        shell=True,
-        check=True,
-        cwd=JOHN_SRC_DIR,
-    )
+    make_cmd = " ".join(make_cmd)
+
+    run(" ".join(make_cmd), shell=True, check=True, cwd=JOHN_SRC_DIR, env=env)
 
 
 @task

@@ -1,7 +1,7 @@
 FROM faasm/cpp-sysroot:0.1.3
 
 # Clone the code
-RUN git clone -b lulesh-2 https://github.com/faasm/experiment-openmp /code/experiment-openmp
+RUN git clone https://github.com/faasm/experiment-openmp /code/experiment-openmp
 WORKDIR /code/experiment-openmp
 RUN git submodule update --init
 

@@ -15,21 +15,18 @@ from tasks.faasm import (
     get_faasm_invoke_host_port,
     get_knative_headers,
 )
+
 from tasks.util import (
-    PROJ_ROOT,
     RESULTS_DIR,
 )
 
+from tasks.lulesh.env import (
+    NATIVE_BINARY,
+    WASM_FUNC,
+    WASM_USER,
+)
+
 MAX_THREADS = 45
-
-LULESH_NATIVE_BUILD_DIR = join(PROJ_ROOT, "build", "lulesh", "native")
-LULESH_WASM_BUILD_DIR = join(PROJ_ROOT, "build", "lulesh", "wasm")
-LULESH_DIR = join(PROJ_ROOT, "third-party", "lulesh")
-
-NATIVE_BINARY = join(LULESH_NATIVE_BUILD_DIR, "lulesh2.0")
-WASM_BINARY = join(LULESH_WASM_BUILD_DIR, "lulesh2.0")
-WASM_USER = "lulesh"
-WASM_FUNC = "func"
 
 
 def write_csv_header(result_file):
@@ -46,6 +43,10 @@ def write_result_line(result_file, threads, iteration, actual, reported):
         out_file.write(result_line)
 
 
+# These are the parameters for the LULESH executable. See defaults at
+# https://github.com/LLNL/LULESH/blob/master/lulesh.cc#L2681
+# and translation from cmdline args at
+# https://github.com/LLNL/LULESH/blob/master/lulesh_tuple.h#L565
 ITERATIONS = 50
 CUBE_SIZE = 20
 REGIONS = 11

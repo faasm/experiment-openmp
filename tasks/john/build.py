@@ -1,10 +1,13 @@
 from subprocess import run
 from invoke import task
 import requests
-
+import os
+from copy import copy
 from os import makedirs
 from os.path import exists, join
 from shutil import rmtree
+import multiprocessing
+
 
 from tasks.faasm import get_faasm_upload_host_port
 
@@ -16,11 +19,21 @@ from tasks.util import (
 from tasks.john.env import (
     JOHN_NATIVE_BUILD_DIR,
     JOHN_DIR,
+    JOHN_SRC_DIR,
     JOHN_WASM_BUILD_DIR,
     WASM_BINARY,
     WASM_FUNC,
     WASM_USER,
 )
+
+from tasks.compile import CONFIG_CMD_FLAGS
+
+JOHN_ENV = {
+    "OMP_NUM_THREADS": "2",
+    "PLUGS": "none",
+    "UNIT_TESTS": "no",
+    "BUILD_OPTS": "--enable-werror CPPFLAGS=-DDYNAMIC_DISABLED",
+}
 
 
 @task
@@ -28,31 +41,31 @@ def native(ctx, clean=False):
     """
     Compile John natively
     """
-    if clean and exists(JOHN_NATIVE_BUILD_DIR):
-        rmtree(JOHN_NATIVE_BUILD_DIR)
+    if clean:
+        run("make clean", check=True, shell=True, cwd=JOHN_SRC_DIR)
 
-    makedirs(JOHN_NATIVE_BUILD_DIR, exist_ok=True)
+    env = copy(os.environ)
+    env = env.update(JOHN_ENV)
 
-    cmake_cmd = [
-        "cmake",
-        "-G Ninja",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DWITH_MPI=FALSE",
-        JOHN_DIR,
+    configure_cmd = [
+        "./configure",
+        "--enable-werror CPPFLAGS=-DDYNAMIC_DISABLED",
     ]
 
     run(
-        " ".join(cmake_cmd),
+        " ".join(configure_cmd),
         shell=True,
         check=True,
-        cwd=JOHN_NATIVE_BUILD_DIR,
+        cwd=JOHN_SRC_DIR,
     )
 
+    n_cpus = multiprocessing.cpu_count()
+    make_cmd = ["make -j {}".format(n_cpus - 1)]
     run(
-        "cmake --build . --target all",
+        " ".join(make_cmd),
         shell=True,
         check=True,
-        cwd=JOHN_NATIVE_BUILD_DIR,
+        cwd=JOHN_SRC_DIR,
     )
 
 
@@ -61,40 +74,35 @@ def wasm(ctx, clean=False):
     """
     Compile John to wasm
     """
-    if clean and exists(JOHN_WASM_BUILD_DIR):
-        rmtree(JOHN_WASM_BUILD_DIR)
+    if clean:
+        run("make clean", check=True, shell=True, cwd=JOHN_SRC_DIR)
 
-    makedirs(JOHN_WASM_BUILD_DIR, exist_ok=True)
+    env = copy(os.environ)
+    env = env.update(JOHN_ENV)
 
-    cmake_cmd = [
-        "cmake",
-        "-GNinja",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DWITH_MPI=FALSE",
-        "-DWITH_FAASM=TRUE",
-        "-DCMAKE_TOOLCHAIN_FILE={}".format(CMAKE_TOOLCHAIN_FILE),
-        JOHN_DIR,
+    configure_cmd = [
+        "./configure",
+        "--enable-werror CPPFLAGS=-DDYNAMIC_DISABLED",
     ]
-    cmake_cmd_str = " ".join(cmake_cmd)
-
-    run(cmake_cmd_str, shell=True, check=True, cwd=JOHN_WASM_BUILD_DIR)
+    configure_cmd.extend(CONFIG_CMD_FLAGS)
+    configure_cmd = " ".join(configure_cmd)
+    print(configure_cmd)
 
     run(
-        "cmake --build . --target all",
+        " ".join(configure_cmd),
         shell=True,
         check=True,
-        cwd=JOHN_WASM_BUILD_DIR,
+        cwd=JOHN_SRC_DIR,
     )
 
-    # Also copy into place locally
-    if exists(FAASM_WASM_DIR):
-        target_dir = join(FAASM_WASM_DIR, WASM_USER, WASM_FUNC)
-        makedirs(target_dir, exist_ok=True)
-        target_file = join(target_dir, "function.wasm")
-        run(
-            "cp {} {}".format(WASM_BINARY, target_file), shell=True, check=True
-        )
-        print("Copied wasm into place at {}".format(target_file))
+    n_cpus = multiprocessing.cpu_count()
+    make_cmd = ["make -j {}".format(n_cpus - 1)]
+    run(
+        " ".join(make_cmd),
+        shell=True,
+        check=True,
+        cwd=JOHN_SRC_DIR,
+    )
 
 
 @task

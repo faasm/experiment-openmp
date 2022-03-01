@@ -9,7 +9,9 @@
 	url = https://github.com/faasm/john
 [submodule "third-party/kernels"]
 	path = third-party/kernels
-	url = git@github.com:ParRes/Kernels.git
+    url = git@github.com:faasm/Kernels.git
+    branch = native
 [submodule "third-party/kernels-wasm"]
 	path = third-party/kernels-wasm
-	url = git@github.com:faasm/Kernels.git
+    url = git@github.com:faasm/Kernels.git
+    branch = faasm

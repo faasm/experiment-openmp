@@ -10,8 +10,16 @@ from tasks.kernels.env import (
     KERNELS_FAASM_USER,
 )
 
-MAKE_TARGETS = [
+SUPPORTED_KERNELS = [
+    ("OPENMP/DGEMM", "dgemm"),
     ("OPENMP/Nstream", "nstream"),
+    ("OPENMP/Reduce", "reduce"),
+    ("OPENMP/Stencil", "stencil"),
+    ("OPENMP/Random", "random"),
+    ("OPENMP/Sparse", "sparse"),
+    ("OPENMP/Synch_global", "global"),
+    ("OPENMP/Synch_p2p", "p2p"),
+    ("OPENMP/Branch", "branch"),
 ]
 
 
@@ -35,19 +43,9 @@ def _do_build(src_dir, clean):
     if clean:
         run("make clean", shell=True, cwd=src_dir)
 
-    # Compile the kernels
-    for subdir, make_target in MAKE_TARGETS:
-        make_cmd = "make {}".format(make_target)
-        make_dir = join(src_dir, subdir)
-        res = run(make_cmd, shell=True, cwd=make_dir)
-
-        if res.returncode != 0:
-            print(
-                "Making kernel in {} with target {} failed.".format(
-                    subdir, make_target
-                )
-            )
-            return
+    for src_dir, target in SUPPORTED_KERNELS:
+        d = join(KERNELS_WASM_DIR, src_dir)
+        run("make {}".format(target), shell=True, cwd=d)
 
 
 @task
@@ -57,7 +55,7 @@ def upload(ctx):
     """
     host, port = get_faasm_upload_host_port()
 
-    for target in [t[1] for t in MAKE_TARGETS]:
+    for src_dir, target in SUPPORTED_KERNELS:
         wasm_file = join(KERNELS_WASM_DIR, "wasm", "{}.wasm".format(target))
 
         url = "http://{}:{}/f/{}/{}".format(

@@ -6,12 +6,12 @@
 	url = https://github.com/faasm/LULESH.git
 [submodule "third-party/john"]
 	path = third-party/john
-	url = https://github.com/faasm/john
+	url = https://github.com/faasm/john.git
 [submodule "third-party/kernels"]
 	path = third-party/kernels
-    url = git@github.com:faasm/Kernels.git
+    url = https://github.com/faasm/Kernels.git
     branch = native
 [submodule "third-party/kernels-wasm"]
 	path = third-party/kernels-wasm
-    url = git@github.com:faasm/Kernels.git
+    url = https://github.com/faasm/Kernels.git
     branch = faasm

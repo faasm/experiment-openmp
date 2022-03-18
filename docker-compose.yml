@@ -11,3 +11,4 @@ services:
     volumes:
       - ${FAASM_LOCAL_DIR}:/usr/local/faasm
       - .:/code/experiment-openmp
+      - ~/.config/faasm.ini:/root/.config/faasm.ini

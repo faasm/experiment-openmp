@@ -11,15 +11,15 @@ from tasks.kernels.env import (
 )
 
 SUPPORTED_KERNELS = [
+    ("OPENMP/Branch", "branch"),
     ("OPENMP/DGEMM", "dgemm"),
     ("OPENMP/Nstream", "nstream"),
+    ("OPENMP/Random", "random"),
     ("OPENMP/Reduce", "reduce"),
     ("OPENMP/Stencil", "stencil"),
-    ("OPENMP/Random", "random"),
     ("OPENMP/Sparse", "sparse"),
     ("OPENMP/Synch_global", "global"),
     ("OPENMP/Synch_p2p", "p2p"),
-    ("OPENMP/Branch", "branch"),
 ]
 
 

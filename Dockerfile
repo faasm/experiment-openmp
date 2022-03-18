@@ -1,4 +1,4 @@
-FROM faasm/cpp-sysroot:0.1.3
+FROM faasm/cpp-sysroot:0.1.6
 
 # Clone the code
 RUN git clone https://github.com/faasm/experiment-openmp /code/experiment-openmp

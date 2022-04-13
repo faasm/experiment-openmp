@@ -4,17 +4,12 @@ from subprocess import run
 from os.path import join
 from os import makedirs
 from os.path import exists
-import pprint
-import requests
 import time
-import json
 import os
 from copy import copy
 
 from tasks.faasm import (
     invoke_and_await,
-    get_faasm_invoke_host_port,
-    get_knative_headers,
     faasm_flush,
 )
 

@@ -1,5 +1,5 @@
 from os.path import join
-from tasks.util import PROJ_ROOT
+from tasks.util import PROJ_ROOT, RESULTS_DIR
 
 KERNELS_NATIVE_DIR = join(PROJ_ROOT, "third-party", "kernels")
 KERNELS_WASM_DIR = join(PROJ_ROOT, "third-party", "kernels-wasm")
@@ -50,3 +50,6 @@ KERNELS_NATIVE_EXECUTABLES = {
     "global": join(KERNELS_NATIVE_DIR, "OPENMP", "Synch_global", "global"),
     "p2p": join(KERNELS_NATIVE_DIR, "OPENMP", "Synch_p2p", "p2p"),
 }
+
+WASM_RESULT_FILE = join(RESULTS_DIR, "kernels_wasm.csv")
+NATIVE_RESULT_FILE = join(RESULTS_DIR, "kernels_native.csv")

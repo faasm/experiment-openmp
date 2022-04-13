@@ -44,8 +44,7 @@ def _do_build(src_dir, clean):
         run("make clean", shell=True, cwd=src_dir)
 
     for src_dir, target in SUPPORTED_KERNELS:
-        d = join(KERNELS_WASM_DIR, src_dir)
-        run("make {}".format(target), shell=True, cwd=d)
+        run("make {}".format(target), shell=True, cwd=src_dir)
 
 
 @task

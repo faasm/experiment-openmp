@@ -17,7 +17,11 @@ RUNTIME_PLOT_FILE = join(PLOTS_ROOT, "kernels_runtime.{}".format(PLOTS_FORMAT))
 def _read_results(csv_file):
     results = pd.read_csv(csv_file)
 
-    return results
+    grouped = results.groupby(["Kernel", "Threads"])
+    times = grouped.mean()
+    errs = grouped.std()
+
+    return grouped, times, errs
 
 
 @task(default=True)
@@ -28,25 +32,24 @@ def plot(ctx):
     makedirs(PLOTS_DIR, exist_ok=True)
 
     # Load results
-    native_results = _read_results(NATIVE_RESULT_FILE)
-    wasm_results = _read_results(WASM_RESULT_FILE)
-
-    # TODO - group by kernel
-
-    # TODO - average time over runs
-
-    # TODO - plot per kernel showing scaling with increasing threads
+    native_grouped, native_times, native_errs = _read_results(
+        NATIVE_RESULT_FILE
+    )
 
     fig, ax = plt.subplots()
 
-    # Prepare legend
-    ax.legend(["OpenMP", "Faabric"], loc="upper left")
+    native_times.plot.line(
+        y="Actual",
+        yerr=native_errs,
+        ecolor="gray",
+        elinewidth=0.8,
+        capsize=1.0,
+        ax=ax,
+        label="Native",
+    )
 
-    # Aesthetics
-    ax.set_ylabel("Elapsed time [s]")
-    ax.set_xlabel("# of parallel functions")
     ax.set_ylim(0)
-    ax.set_xlim(0, 30)
+    ax.set_xlim(0, 20)
 
     fig.tight_layout()
     plt.gca().set_aspect(0.1)

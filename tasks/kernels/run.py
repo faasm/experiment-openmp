@@ -89,7 +89,7 @@ def process_result(
 
     reported_time = float(reported_time)
     write_result_line(
-        kernel, result_file, n_threads, run_num, measured_time, reported_time
+        result_file, kernel, n_threads, run_num, measured_time, reported_time
     )
 
 

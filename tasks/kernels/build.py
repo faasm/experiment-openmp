@@ -11,19 +11,8 @@ from tasks.kernels.env import (
     KERNELS_NATIVE_DIR,
     KERNELS_WASM_DIR,
     KERNELS_FAASM_USER,
+    SUPPORTED_KERNELS,
 )
-
-SUPPORTED_KERNELS = [
-    ("OPENMP/Branch", "branch"),
-    ("OPENMP/DGEMM", "dgemm"),
-    ("OPENMP/Nstream", "nstream"),
-    ("OPENMP/Random", "random"),
-    ("OPENMP/Reduce", "reduce"),
-    ("OPENMP/Stencil", "stencil"),
-    ("OPENMP/Sparse", "sparse"),
-    ("OPENMP/Synch_global", "global"),
-    ("OPENMP/Synch_p2p", "p2p"),
-]
 
 
 @task

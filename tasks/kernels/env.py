@@ -21,13 +21,13 @@ SUPPORTED_KERNELS = [
 KERNELS_CMDLINE = {
     "dgemm": [400, 400],
     # dgemm: iterations, matrix order
-    "nstream": [20000, 200000, 0],
+    "nstream": [20000, 400000, 0],
     # nstream: iterations, vector length, offset
-    "reduce": [40000, 20000],
+    "reduce": [20000, 40000],
     # reduce: iterations, vector length
     "stencil": [200, 5000],
     # stencil: iterations, array dimension
-    "global": [5000, 250000],
+    "global": [5000, 500000],
     # global: iterations, scramble string length
     "p2p": [750, 10000, 1000],
     # p2p: iterations, 1st array dimension, 2nd array dimension

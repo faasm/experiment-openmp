@@ -21,7 +21,7 @@ from tasks.faasm import (
     invoke_and_await,
 )
 
-NUM_THREADS = [2, 4, 8, 16]
+NUM_THREADS = [2, 4, 6, 8, 10, 16]
 
 SPARSE_GRID_SIZE_2LOG = 10
 SPARSE_GRID_SIZE = pow(2, SPARSE_GRID_SIZE_2LOG)
@@ -58,7 +58,12 @@ def init_result_file(is_wasm):
 def write_result_line(
     result_file, kernel, n_threads, run_num, actual_time, reported_time
 ):
-    print("Writing result to {}".format(result_file))
+    print(
+        "{},{},{},{},{}".format(
+            kernel, n_threads, run_num, actual_time, reported_time
+        )
+    )
+
     with open(result_file, "a") as out_file:
         result_line = "{},{},{},{},{}\n".format(
             kernel, n_threads, run_num, actual_time, reported_time
@@ -85,7 +90,6 @@ def process_result(
     reported_time = stat_parts[-1].replace(":", "")
     reported_time = [s.strip() for s in reported_time.split(" ") if s.strip()]
     reported_time = reported_time[0]
-    print("Got {} = {} for {}".format(timing_stat, reported_time, kernel))
 
     reported_time = float(reported_time)
     write_result_line(

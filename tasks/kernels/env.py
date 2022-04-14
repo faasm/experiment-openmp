@@ -7,7 +7,6 @@ KERNELS_WASM_DIR = join(PROJ_ROOT, "third-party", "kernels-wasm")
 KERNELS_FAASM_USER = "omp"
 
 SUPPORTED_KERNELS = [
-    ("OPENMP/Branch", "branch"),
     ("OPENMP/DGEMM", "dgemm"),
     ("OPENMP/Nstream", "nstream"),
     ("OPENMP/Random", "random"),

@@ -87,8 +87,13 @@ def process_result(
         )
         return
 
+    # Use colon to get the second part
     reported_time = stat_parts[-1].replace(":", "")
     reported_time = [s.strip() for s in reported_time.split(" ") if s.strip()]
+    reported_time = reported_time[0]
+
+    # Guard against the number being followed by a newline
+    reported_time = [s.strip() for s in reported_time.split("\n") if s.strip()]
     reported_time = reported_time[0]
 
     reported_time = float(reported_time)

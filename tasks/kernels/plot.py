@@ -1,56 +1,103 @@
-from glob import glob
 from invoke import task
-from os import makedirs, listdir
+from os import makedirs
 from os.path import join, exists
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-from tasks.kernels.env import WASM_RESULT_FILE, NATIVE_RESULT_FILE
+from tasks.kernels.env import (
+    WASM_RESULT_FILE,
+    NATIVE_RESULT_FILE,
+    KERNELS_CMDLINE,
+)
 from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PROJ_ROOT, RESULTS_DIR
+
+PLOT_KERNELS = list(KERNELS_CMDLINE.keys())
 
 PLOTS_DIR = join(PLOTS_ROOT, "lulesh")
 RUNTIME_PLOT_FILE = join(PLOTS_ROOT, "kernels_runtime.{}".format(PLOTS_FORMAT))
 
 
 def _read_results(csv_file):
-    results = pd.read_csv(csv_file)
+    if not exists(csv_file):
+        return list(), dict()
 
-    grouped = results.groupby(["Kernel", "Threads"])
-    times = grouped.mean()
-    errs = grouped.std()
+    data = pd.read_csv(csv_file)
 
-    return grouped, times, errs
+    grouped = data.groupby(["Kernel"])
+
+    results = dict()
+
+    for name, group in grouped:
+        by_thread = group.groupby(["Threads"])
+
+        threads = [int(t) for t in by_thread.groups.keys()]
+        times = by_thread.mean()["Actual"].values
+        errs = by_thread.std()["Actual"].values
+        errs = [np.nan_to_num(e) for e in errs]
+
+        results[name] = {
+            "threads": threads,
+            "times": times,
+            "errs": errs,
+        }
+
+    kernels = results.keys()
+
+    return kernels, results
 
 
 @task(default=True)
-def plot(ctx):
+def plot(ctx, headless=False):
     """
     Plot Kernels figure
     """
     makedirs(PLOTS_DIR, exist_ok=True)
 
     # Load results
-    native_grouped, native_times, native_errs = _read_results(
-        NATIVE_RESULT_FILE
-    )
+    native_kernels, native_results = _read_results(NATIVE_RESULT_FILE)
+
+    wasm_kernels, wasm_results = _read_results(WASM_RESULT_FILE)
 
     fig, ax = plt.subplots()
+    rows = 2
+    cols = -(-len(PLOT_KERNELS) // 2)
 
-    native_times.plot.line(
-        y="Actual",
-        yerr=native_errs,
-        ecolor="gray",
-        elinewidth=0.8,
-        capsize=1.0,
-        ax=ax,
-        label="Native",
-    )
+    for i, kernel in enumerate(PLOT_KERNELS):
+        native_result = native_results.get(kernel, dict())
+        wasm_result = wasm_results.get(kernel, dict())
 
-    ax.set_ylim(0)
-    ax.set_xlim(0, 20)
+        plt.subplot(rows, cols, i + 1)
+
+        plt.title(kernel)
+
+        if native_result:
+            plt.errorbar(
+                x=native_result["threads"],
+                y=native_result["times"],
+                yerr=native_result["errs"],
+                color="tab:blue",
+                label="Native",
+            )
+
+        if wasm_result:
+            plt.errorbar(
+                x=wasm_result["threads"],
+                y=wasm_result["times"],
+                yerr=wasm_result["errs"],
+                color="tab:orange",
+                label="Faasm",
+            )
+
+        plt.legend()
+        plt.gca().set_ylim(0)
 
     fig.tight_layout()
-    plt.gca().set_aspect(0.1)
-    plt.savefig(RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight")
+
+    if headless:
+        plt.savefig(
+            RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight"
+        )
+    else:
+        plt.show()

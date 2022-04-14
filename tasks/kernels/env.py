@@ -33,6 +33,7 @@ KERNELS_CMDLINE = {
     # p2p: iterations, 1st array dimension, 2nd array dimension
 }
 
+
 KERNELS_STATS = {
     "dgemm": ("Avg time (s)", "Rate (MFlops/s)"),
     "nstream": ("Avg time (s)", "Rate (MB/s)"),

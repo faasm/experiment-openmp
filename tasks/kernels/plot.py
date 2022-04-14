@@ -11,7 +11,7 @@ from tasks.kernels.env import (
     NATIVE_RESULT_FILE,
     KERNELS_CMDLINE,
 )
-from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PROJ_ROOT, RESULTS_DIR
+from tasks.util import PLOTS_FORMAT, PLOTS_ROOT
 
 PLOT_KERNELS = list(KERNELS_CMDLINE.keys())
 

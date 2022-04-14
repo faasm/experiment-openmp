@@ -29,7 +29,7 @@ JOHN_ENV = {
     "OMP_NUM_THREADS": "2",
     "PLUGS": "none",
     "UNIT_TESTS": "no",
-    "BUILD_OPTS": "--enable-werror CPPFLAGS=-DDYNAMIC_DISABLED",
+    "BUILD_OPTS": "--enable-werror CPPFLAGS=-DDYNAMIC_DISABLED --without-openssl",
 }
 
 
@@ -47,6 +47,7 @@ def native(ctx, clean=False):
     configure_cmd = [
         "./configure",
         "--enable-werror CPPFLAGS=-DDYNAMIC_DISABLED",
+        "--without-openssl",
     ]
 
     run(

@@ -4,3 +4,6 @@
 [submodule "third-party/lulesh"]
 	path = third-party/lulesh
 	url = https://github.com/faasm/LULESH.git
+[submodule "third-party/john"]
+	path = third-party/john
+	url = https://github.com/faasm/john.git

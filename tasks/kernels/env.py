@@ -12,44 +12,52 @@ SUPPORTED_KERNELS = [
     ("OPENMP/Nstream", "nstream"),
     ("OPENMP/Random", "random"),
     ("OPENMP/Reduce", "reduce"),
-    ("OPENMP/Stencil", "stencil"),
     ("OPENMP/Sparse", "sparse"),
+    ("OPENMP/Stencil", "stencil"),
     ("OPENMP/Synch_global", "global"),
     ("OPENMP/Synch_p2p", "p2p"),
 ]
 
 KERNELS_CMDLINE = {
-    "dgemm": [400, 400],
     # dgemm: iterations, matrix order
-    "nstream": [20000, 400000, 0],
-    # nstream: iterations, vector length, offset
-    "reduce": [20000, 40000],
-    # reduce: iterations, vector length
-    "stencil": [200, 5000],
-    # stencil: iterations, array dimension
-    "global": [5000, 500000],
+    "dgemm": [400, 400],
     # global: iterations, scramble string length
-    "p2p": [750, 10000, 1000],
+    "global": [5000, 500000],
+    # nstream: iterations, vector length, offset
+    "nstream": [20000, 400000, 0],
     # p2p: iterations, 1st array dimension, 2nd array dimension
+    "p2p": [750, 10000, 1000],
+    # random: log2 table size, update ratio, vector length
+    # Update ratio must be divisible by vector length
+    # "random": [16, 5000, 1000], # Seems to error even running native
+    # reduce: iterations, vector length
+    "reduce": [20000, 40000],
+    # sparse: iterations, 2log grid size, radius
+    "sparse": [400, 10, 4],
+    # stencil: iterations, array dimension
+    "stencil": [200, 5000],
 }
 
-
+# Kernel stats, put avg time first
 KERNELS_STATS = {
     "dgemm": ("Avg time (s)", "Rate (MFlops/s)"),
-    "nstream": ("Avg time (s)", "Rate (MB/s)"),
-    "reduce": ("Avg time (s)", "Rate (MFlops/s)"),
-    "stencil": ("Avg time (s)", "Rate (MFlops/s)"),
     "global": ("time (s)", "Rate (synch/s)"),
+    "nstream": ("Avg time (s)", "Rate (MB/s)"),
     "p2p": ("Avg time (s)", "Rate (MFlops/s)"),
+    "reduce": ("Avg time (s)", "Rate (MFlops/s)"),
+    "sparse": ("Avg time (s)", "Rate (MFlops/s)"),
+    "stencil": ("Avg time (s)", "Rate (MFlops/s)"),
 }
 
 KERNELS_NATIVE_EXECUTABLES = {
     "dgemm": join(KERNELS_NATIVE_DIR, "OPENMP", "DGEMM", "dgemm"),
-    "nstream": join(KERNELS_NATIVE_DIR, "OPENMP", "Nstream", "nstream"),
-    "reduce": join(KERNELS_NATIVE_DIR, "OPENMP", "Reduce", "reduce"),
-    "stencil": join(KERNELS_NATIVE_DIR, "OPENMP", "Stencil", "stencil"),
     "global": join(KERNELS_NATIVE_DIR, "OPENMP", "Synch_global", "global"),
+    "nstream": join(KERNELS_NATIVE_DIR, "OPENMP", "Nstream", "nstream"),
     "p2p": join(KERNELS_NATIVE_DIR, "OPENMP", "Synch_p2p", "p2p"),
+    "random": join(KERNELS_NATIVE_DIR, "OPENMP", "Random", "random"),
+    "reduce": join(KERNELS_NATIVE_DIR, "OPENMP", "Reduce", "reduce"),
+    "sparse": join(KERNELS_NATIVE_DIR, "OPENMP", "Sparse", "sparse"),
+    "stencil": join(KERNELS_NATIVE_DIR, "OPENMP", "Stencil", "stencil"),
 }
 
 WASM_RESULT_FILE = join(RESULTS_DIR, "kernels_wasm.csv")

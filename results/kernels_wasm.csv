@@ -1,3 +1,0 @@
-Kernel,Threads,Iteration,Actual,Reported
-dgemm,4,0,16.33283758163452,0.02425
-nstream,4,0,26.166061639785767,0.001112

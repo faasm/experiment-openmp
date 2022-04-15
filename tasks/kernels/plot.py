@@ -2,6 +2,7 @@ from invoke import task
 from os import makedirs
 from os.path import join, exists
 
+import math
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -72,6 +73,8 @@ def plot(ctx, headless=False):
 
         plt.title(kernel)
 
+        max_native_time = 0
+        max_wasm_time = 0
         if native_result:
             plt.errorbar(
                 x=native_result["threads"],
@@ -80,6 +83,8 @@ def plot(ctx, headless=False):
                 color="tab:blue",
                 label="Native",
             )
+
+            max_native_time = np.max(native_result["times"])
 
         if wasm_result:
             plt.errorbar(
@@ -90,8 +95,12 @@ def plot(ctx, headless=False):
                 label="Faasm",
             )
 
+            max_wasm_time = np.max(wasm_result["times"])
+
+        max_y = math.ceil(np.max([max_native_time, max_wasm_time]))
+
         plt.legend()
-        plt.gca().set_ylim(0)
+        plt.gca().set_ylim(0, max_y)
 
     fig.tight_layout()
 

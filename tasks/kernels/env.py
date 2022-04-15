@@ -24,7 +24,9 @@ SUPPORTED_KERNELS = [
 # - Random errors when running natively
 # - PIC requires new init
 # - Transpose requires new init
-KERNELS_NON_WASM = ["pic", "random", "transpose"]
+# - Global doesn't work across hosts
+# - Reduce doesn't scale natively
+KERNELS_NON_WASM = ["pic", "global", "random", "reduce", "transpose"]
 
 # See PRK CI scripts for example arguments:
 # https://github.com/ParRes/Kernels/blob/default/ci/build-run-prk.sh

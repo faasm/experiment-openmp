@@ -22,7 +22,8 @@ from tasks.faasm import (
     invoke_and_await,
 )
 
-NUM_THREADS = [2, 4, 6, 8, 10, 12, 14, 16]
+# NUM_THREADS = [2, 4, 6, 8, 10, 12, 14, 16]
+NUM_THREADS = [2, 4, 6]
 
 SPARSE_GRID_SIZE_2LOG = 10
 SPARSE_GRID_SIZE = pow(2, SPARSE_GRID_SIZE_2LOG)

@@ -75,6 +75,10 @@ def upload(ctx):
     host, port = get_faasm_upload_host_port()
 
     for rel_dir, target in SUPPORTED_KERNELS:
+        if target in KERNELS_NON_WASM:
+            print("Skipping upload of {}, not supported".format(target))
+            continue
+
         wasm_file = join(KERNELS_WASM_DIR, "wasm", "{}.wasm".format(target))
 
         url = "http://{}:{}/f/{}/{}".format(

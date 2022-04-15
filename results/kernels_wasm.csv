@@ -1,0 +1,9 @@
+Kernel,Threads,Iteration,Actual,Reported
+dgemm,2,0,18.3242,1.5954
+dgemm,4,0,14.1022,0.8524
+dgemm,6,0,10.0853,0.6323
+dgemm,2,0,20.3205,1.5954
+dgemm,4,0,14.3033,0.8446
+dgemm,6,0,12.0971,0.6402
+reduce,2,0,2.0617,0.0626
+sparse,2,0,8.2678,0.1289

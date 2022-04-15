@@ -9,6 +9,7 @@ from tasks.faasm import get_faasm_upload_host_port
 from tasks.util import FAASM_LOCAL_DIR
 from tasks.kernels.env import (
     KERNELS_NATIVE_DIR,
+    KERNELS_NON_WASM,
     KERNELS_WASM_DIR,
     KERNELS_FAASM_USER,
     SUPPORTED_KERNELS,
@@ -39,6 +40,10 @@ def _do_build(src_dir, clean, is_wasm):
         run("make clean", shell=True, cwd=src_dir)
 
     for relative_dir, target in SUPPORTED_KERNELS:
+        if is_wasm and target in KERNELS_NON_WASM:
+            print("Skipping {} for wasm".format(target))
+            continue
+
         work_dir = join(src_dir, relative_dir)
         print("Making {} in {}".format(target, work_dir))
         run("make {}".format(target), shell=True, cwd=work_dir)

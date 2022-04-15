@@ -2,7 +2,7 @@ from copy import copy
 import os
 import time
 from os.path import exists, join
-from os import makedirs
+from os import makedirs, remove
 from subprocess import run, PIPE
 
 from invoke import task
@@ -21,7 +21,7 @@ from tasks.faasm import (
     invoke_and_await,
 )
 
-NUM_THREADS = [2, 4, 6, 8, 10, 16]
+NUM_THREADS = [2, 4, 6, 8, 10, 12, 14, 16]
 
 SPARSE_GRID_SIZE_2LOG = 10
 SPARSE_GRID_SIZE = pow(2, SPARSE_GRID_SIZE_2LOG)
@@ -39,14 +39,14 @@ def get_cmdline_args(kernel_name, n_threads):
     return " ".join([str(c) for c in cmdline])
 
 
-def init_result_file(is_wasm):
-    if is_wasm:
-        result_file = join(RESULTS_DIR, "kernels_wasm.csv")
-    else:
-        result_file = join(RESULTS_DIR, "kernels_native.csv")
+def init_result_file(file_name, clean):
+    result_file = join(RESULTS_DIR, file_name)
 
     if not exists(RESULTS_DIR):
         makedirs(RESULTS_DIR)
+
+    if exists(result_file) and clean:
+        remove(result_file)
 
     if not exists(result_file):
         with open(result_file, "w") as out_file:
@@ -59,13 +59,13 @@ def write_result_line(
     result_file, kernel, n_threads, run_num, actual_time, reported_time
 ):
     print(
-        "{},{},{},{},{}".format(
+            "{},{},{},{:.4f},{}".format(
             kernel, n_threads, run_num, actual_time, reported_time
         )
     )
 
     with open(result_file, "a") as out_file:
-        result_line = "{},{},{},{},{}\n".format(
+        result_line = "{},{},{},{:.4f},{}\n".format(
             kernel, n_threads, run_num, actual_time, reported_time
         )
         out_file.write(result_line)
@@ -95,8 +95,8 @@ def process_result(
     # Guard against the number being followed by a newline
     reported_time = [s.strip() for s in reported_time.split("\n") if s.strip()]
     reported_time = reported_time[0]
-
     reported_time = float(reported_time)
+
     write_result_line(
         result_file, kernel, n_threads, run_num, measured_time, reported_time
     )
@@ -111,11 +111,13 @@ def flush(ctx):
 
 
 @task
-def faasm(ctx, repeats=1, threads=None, kernel=None, verbose=False):
+def faasm(
+    ctx, repeats=1, threads=None, kernel=None, verbose=False, clean=False
+):
     """
     Run kernel(s) in Faasm
     """
-    result_file = init_result_file(True)
+    result_file = init_result_file("kernels_wasm.csv", clean)
 
     if threads:
         n_threads = [threads]
@@ -155,11 +157,13 @@ def faasm(ctx, repeats=1, threads=None, kernel=None, verbose=False):
 
 
 @task
-def native(ctx, repeats=1, threads=None, kernel=None, verbose=False):
+def native(
+    ctx, repeats=1, threads=None, kernel=None, verbose=False, clean=False
+):
     """
     Run kernel(s) natively
     """
-    result_file = init_result_file(False)
+    result_file = init_result_file("kernels_native.csv", clean)
 
     if threads:
         n_threads = [threads]

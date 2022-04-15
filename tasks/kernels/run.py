@@ -87,17 +87,21 @@ def process_result(
                 timing_stat, kernel
             )
         )
-        return
+        reported_time = 0
+    else:
+        # Use colon to get the second part
+        reported_time = stat_parts[-1].replace(":", "")
+        reported_time = [
+            s.strip() for s in reported_time.split(" ") if s.strip()
+        ]
+        reported_time = reported_time[0]
 
-    # Use colon to get the second part
-    reported_time = stat_parts[-1].replace(":", "")
-    reported_time = [s.strip() for s in reported_time.split(" ") if s.strip()]
-    reported_time = reported_time[0]
-
-    # Guard against the number being followed by a newline
-    reported_time = [s.strip() for s in reported_time.split("\n") if s.strip()]
-    reported_time = reported_time[0]
-    reported_time = float(reported_time)
+        # Guard against the number being followed by a newline
+        reported_time = [
+            s.strip() for s in reported_time.split("\n") if s.strip()
+        ]
+        reported_time = reported_time[0]
+        reported_time = float(reported_time)
 
     write_result_line(
         result_file, kernel, n_threads, run_num, measured_time, reported_time

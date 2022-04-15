@@ -26,7 +26,8 @@ SUPPORTED_KERNELS = [
 # - Transpose requires new init
 # - Global doesn't work across hosts
 # - Reduce doesn't scale natively
-KERNELS_NON_WASM = ["pic", "global", "random", "reduce", "transpose"]
+# - p2p works, but is *very* slow when distributed
+KERNELS_NON_WASM = ["pic", "global", "random", "reduce", "transpose", "p2p"]
 
 # See PRK CI scripts for example arguments:
 # https://github.com/ParRes/Kernels/blob/default/ci/build-run-prk.sh
@@ -36,9 +37,11 @@ KERNELS_CMDLINE = {
     # global: iterations, scramble string length
     "global": [10, 100000],
     # nstream: iterations, vector length, offset
-    "nstream": [10, 100000000, 32],
+    # nstream vector length gets OOM somewhere over 50000000 in wasm
+    "nstream": [10, 50000000, 32],
     # p2p: iterations, 1st array dimension, 2nd array dimension
-    "p2p": [10, 20000, 20000],
+    # p2p arrays get OOM somewhere over 10000 x 10000 in wasm
+    "p2p": [10, 10000, 10000],
     # pic: simulation steps, grid size, n particles, k, m
     "pic": [10, 1000, 5000000, 1, 0, "LINEAR", 1.0, 3.0],
     # reduce: iterations, vector length

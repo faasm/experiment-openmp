@@ -1,6 +1,11 @@
 from configparser import ConfigParser
 from os.path import expanduser, join, exists
+from pprint import pprint
+import requests
+import time
+import json
 
+MESSAGE_TYPE_FLUSH = 3
 
 FAASM_INI_FILE = join(expanduser("~"), ".config", "faasm.ini")
 
@@ -44,3 +49,74 @@ def get_faasm_worker_pods():
 def get_knative_headers():
     knative_host = get_faasm_ini_value("Faasm", "knative_host")
     return {"Host": knative_host}
+
+
+def invoke_and_await(user, func, msg, interval=2):
+    host, port = get_faasm_invoke_host_port()
+    headers = get_knative_headers()
+    url = "http://{}:{}".format(host, port)
+
+    # Invoke
+    print("Posting to {}".format(url))
+    pprint(msg)
+
+    response = requests.post(url, json=msg, headers=headers)
+
+    if response.status_code != 200:
+        print(
+            "Initial request failed: {}:\n{}".format(
+                response.status_code, response.text
+            )
+        )
+    print("Response: {}".format(response.text))
+
+    msg_id = int(response.text.strip())
+    print("Polling message {}".format(msg_id))
+
+    while True:
+        time.sleep(interval)
+
+        status_msg = {
+            "user": user,
+            "function": func,
+            "status": True,
+            "id": msg_id,
+        }
+        response = requests.post(
+            url,
+            json=status_msg,
+            headers=headers,
+        )
+
+        print(response.text)
+        if response.text.startswith("RUNNING"):
+            continue
+        elif response.text.startswith("FAILED"):
+            raise RuntimeError("Call failed")
+        elif not response.text:
+            raise RuntimeError("Empty status response")
+
+        # Try to parse to json
+        result_data = json.loads(response.text)
+        output_data = result_data["output_data"]
+        return output_data
+
+
+def faasm_flush():
+    host, port = get_faasm_invoke_host_port()
+    knative_headers = get_knative_headers()
+    url = "http://{}:{}".format(host, port)
+
+    msg = {"type": MESSAGE_TYPE_FLUSH}
+    response = requests.post(
+        url, json=msg, headers=knative_headers, timeout=None
+    )
+    if response.status_code != 200:
+        print(
+            "Flush request failed: {}:\n{}".format(
+                response.status_code, response.text
+            )
+        )
+    print("Waiting for flush to propagate...")
+    time.sleep(5)
+    print("Done waiting")

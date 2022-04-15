@@ -4,16 +4,13 @@ from subprocess import run
 from os.path import join
 from os import makedirs
 from os.path import exists
-import pprint
-import requests
 import time
-import json
 import os
 from copy import copy
 
 from tasks.faasm import (
-    get_faasm_invoke_host_port,
-    get_knative_headers,
+    invoke_and_await,
+    faasm_flush,
 )
 
 from tasks.util import (
@@ -52,8 +49,6 @@ CUBE_SIZE = 20
 REGIONS = 11
 BALANCE = 1
 COST = 1
-
-MESSAGE_TYPE_FLUSH = 3
 
 NUM_CORES = cpu_count()
 NUM_REPEATS = 3
@@ -123,24 +118,17 @@ def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
     """
     Run LULESH experiment on Faasm
     """
-    host, port = get_faasm_invoke_host_port()
-
-    url = "http://{}:{}".format(host, port)
-
     threads_list = range(int(start), int(end), step)
 
     if not exists(RESULTS_DIR):
         makedirs(RESULTS_DIR)
 
     # Run experiments
-    headers = get_knative_headers()
     for n_threads in threads_list:
         print("Running Lulesh with {} threads".format(n_threads))
 
         # Start with a flush
-        print("Flushing")
-        msg = {"type": MESSAGE_TYPE_FLUSH}
-        response = requests.post(url, json=msg, headers=headers, timeout=None)
+        faasm_flush()
 
         result_file = join(RESULTS_DIR, "lulesh_wasm_{}.csv".format(n_threads))
 
@@ -171,74 +159,26 @@ def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
             # Start timer
             start = time.time()
 
-            # Invoke
-            print("Posting to {}".format(url))
-            pprint.pprint(msg)
+            output_data = invoke_and_await(WASM_USER, WASM_FUNC, msg)
 
-            response = requests.post(url, json=msg, headers=headers)
+            actual_time = time.time() - start
+            if output_data.startswith("Run completed"):
+                # Parse to get reported
+                reported = output_data.split("Elapsed time         =")[1]
+                reported = reported.strip()
+                reported = reported.split(" ")[0]
 
-            if response.status_code != 200:
                 print(
-                    "Initial request failed: {}:\n{}".format(
-                        response.status_code, response.text
+                    "SUCCESS: reported {} actual {}".format(
+                        reported, actual_time
                     )
                 )
-            print("Response: {}".format(response.text))
-
-            msg_id = int(response.text.strip())
-            print("Polling message {}".format(msg_id))
-
-            while True:
-                interval = 2
-                time.sleep(interval)
-
-                status_msg = {
-                    "user": WASM_USER,
-                    "function": WASM_FUNC,
-                    "status": True,
-                    "id": msg_id,
-                }
-                response = requests.post(
-                    url,
-                    json=status_msg,
-                    headers=headers,
+                break
+            else:
+                print(
+                    "Unrecognised or failure response: {}".format(output_data)
                 )
-
-                print(response.text)
-                if response.text.startswith("RUNNING"):
-                    continue
-                elif response.text.startswith("FAILED"):
-                    raise RuntimeError("Call failed")
-                elif not response.text:
-                    raise RuntimeError("Empty status response")
-                else:
-                    # Try to parse to json
-                    result_data = json.loads(response.text)
-                    output_data = result_data["output_data"]
-
-                    actual_time = time.time() - start
-                    if output_data.startswith("Run completed"):
-
-                        # Parse to get reported
-                        reported = output_data.split("Elapsed time         =")[
-                            1
-                        ]
-                        reported = reported.strip()
-                        reported = reported.split(" ")[0]
-
-                        print(
-                            "SUCCESS: reported {} actual {}".format(
-                                reported, actual_time
-                            )
-                        )
-                        break
-                    else:
-                        print(
-                            "Unrecognised or failure response: {}".format(
-                                response.text
-                            )
-                        )
-                        break
+                break
 
             # Write output
             write_result_line(

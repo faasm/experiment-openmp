@@ -4,3 +4,11 @@
 [submodule "third-party/lulesh"]
 	path = third-party/lulesh
 	url = https://github.com/faasm/LULESH.git
+[submodule "third-party/kernels"]
+	path = third-party/kernels
+    url = https://github.com/faasm/Kernels.git
+    branch = native
+[submodule "third-party/kernels-wasm"]
+	path = third-party/kernels-wasm
+    url = https://github.com/faasm/Kernels.git
+    branch = faasm

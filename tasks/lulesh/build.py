@@ -99,6 +99,9 @@ def wasm(ctx, clean=False):
 
 @task
 def upload(ctx):
+    """
+    Upload LULESH to Faasm
+    """
     host, port = get_faasm_upload_host_port()
 
     url = "http://{}:{}/f/{}/{}".format(host, port, WASM_USER, WASM_FUNC)

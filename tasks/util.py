@@ -6,6 +6,7 @@ PROJ_ROOT = dirname(dirname(realpath(__file__)))
 FAASM_LOCAL_DIR = "/usr/local/faasm"
 WASM_TOOLCHAIN_ROOT = "/usr/local/faasm/toolchain"
 WASM_TOOLCHAIN_TOOLS = join(WASM_TOOLCHAIN_ROOT, "tools")
+WASM_SYSROOT = "/usr/local/faasm/llvm-sysroot"
 
 # Toolchain files
 CMAKE_TOOLCHAIN_FILE = join(WASM_TOOLCHAIN_TOOLS, "WasiToolchain.cmake")

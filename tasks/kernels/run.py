@@ -12,6 +12,7 @@ from tasks.util import RESULTS_DIR
 from tasks.kernels.env import (
     KERNELS_FAASM_USER,
     KERNELS_CMDLINE,
+    KERNELS_NON_WASM,
     KERNELS_NATIVE_EXECUTABLES,
     KERNELS_STATS,
 )
@@ -59,7 +60,7 @@ def write_result_line(
     result_file, kernel, n_threads, run_num, actual_time, reported_time
 ):
     print(
-            "{},{},{},{:.4f},{}".format(
+        "{},{},{},{:.4f},{}".format(
             kernel, n_threads, run_num, actual_time, reported_time
         )
     )
@@ -130,6 +131,10 @@ def faasm(
         kernels = KERNELS_CMDLINE.keys()
 
     for kernel in kernels:
+        if kernel in KERNELS_NON_WASM:
+            print("Skipping {}, not supported in wasm".format(kernel))
+            continue
+
         for nt in n_threads:
             for run_num in range(repeats):
                 faasm_flush()

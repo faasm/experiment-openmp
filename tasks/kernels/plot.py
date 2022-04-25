@@ -91,6 +91,7 @@ def plot(ctx, headless=False, kernel=None):
                 yerr=native_result["errs"],
                 color="tab:blue",
                 label="Native",
+                marker=".",
             )
 
             max_native_time = np.max(native_result["times"])
@@ -102,6 +103,7 @@ def plot(ctx, headless=False, kernel=None):
                 yerr=wasm_result["errs"],
                 color="tab:orange",
                 label="Faasm",
+                marker=".",
             )
 
             max_wasm_time = np.max(wasm_result["times"])

@@ -13,6 +13,7 @@ pip3 install -r requirements.txt
 
 export FAASM_LOCAL_DIR=${HOME}/code/faasm/dev/faasm-local
 mkdir -p ${FAASM_LOCAL_DIR}
-echo "export FAASM_LOCAL_DIR=${FAASM_LOCAL_DIR}"
+
+echo "export FAASM_LOCAL_DIR=${FAASM_LOCAL_DIR}" >> ~/.bashrc
 
 inv -l

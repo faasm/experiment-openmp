@@ -23,7 +23,7 @@ from tasks.lulesh.env import (
     WASM_USER,
 )
 
-MAX_THREADS = 45
+MAX_THREADS = 32
 
 
 def write_csv_header(result_file):
@@ -37,6 +37,8 @@ def write_result_line(result_file, threads, iteration, actual_ms, reported):
         result_line = "{},{},{},{}\n".format(
             threads, iteration, actual_ms, reported
         )
+
+        print("{} ({})".format(result_line, result_file))
         out_file.write(result_line)
 
 
@@ -114,7 +116,7 @@ def native(
 
 
 @task
-def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
+def faasm(ctx, start=2, end=MAX_THREADS, repeats=2, step=2):
     """
     Run LULESH experiment on Faasm
     """
@@ -169,12 +171,10 @@ def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
                         reported, actual_s
                     )
                 )
-                break
             else:
                 print(
                     "Unrecognised or failure response: {}".format(output_data)
                 )
-                break
 
             # Write output
             write_result_line(

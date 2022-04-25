@@ -9,7 +9,7 @@ import numpy as np
 
 from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PROJ_ROOT
 
-RESULTS_DIR = join(PROJ_ROOT, "results", "lulesh")
+RESULTS_DIR = join(PROJ_ROOT, "results")
 PLOTS_DIR = join(PLOTS_ROOT, "lulesh")
 RUNTIME_PLOT_FILE = join(PLOTS_DIR, "runtime.{}".format(PLOTS_FORMAT))
 SIMPLE_PLOT_FILE = join(PLOTS_DIR, "lulesh.png")
@@ -38,7 +38,7 @@ def _read_results(mode):
 
 
 @task(default=True)
-def plot(ctx):
+def plot(ctx, headless=False):
     """
     Plot LULESH figure
     """
@@ -71,11 +71,17 @@ def plot(ctx):
     ax.set_ylabel("Elapsed time [s]")
     ax.set_xlabel("# of parallel functions")
     ax.set_ylim(0)
-    ax.set_xlim(0, 30)
+    ax.set_xlim(0, 32)
 
     fig.tight_layout()
-    plt.gca().set_aspect(0.1)
-    plt.savefig(RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight")
+
+    if headless:
+        plt.gca().set_aspect(0.1)
+        plt.savefig(
+            RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight"
+        )
+    else:
+        plt.show()
 
 
 @task

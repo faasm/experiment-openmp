@@ -1,15 +1,12 @@
 # Faasm OpenMP Experiments
 
-Note, this repo should be checked out as part of the Faasm/ Faabric experiment
-set-up covered in the [`experiment-base`
-repo](https://github.com/faasm/experiment-base).
+Instructions and scripts for setting up Kubernetes and VMs can be found in the
+[`experiment-base` repo](https://github.com/faasm/experiment-base).
 
-To check things are working:
+To set up locally, from the root of this project:
 
 ```bash
-../../bin/workon.sh
-
-inv -l
+./bin/local_setup.sh
 ```
 
 ## Local dev setup
@@ -31,6 +28,17 @@ You can rebuild the image with:
 ```bash
 inv container
 ```
+
+## Running experiments on a single VM
+
+To run the baselines for each experiment, we must run it on a single VM of the
+same type as the node pool underlying the K8s cluster used to execute Faasm.
+
+It's recommended that you set up the VM using the instructions in the
+[`experiment-base` repo](https://github.com/faasm/experiment-base).
+
+Once you have a VM set up with the code from this repo, you can run the
+experiment-specific commands.
 
 ## LULESH
 

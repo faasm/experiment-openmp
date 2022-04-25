@@ -1,8 +1,8 @@
 from invoke import task
 from multiprocessing import cpu_count
-from subprocess import run
+from subprocess import run, PIPE
 from os.path import join
-from os import makedirs
+from os import makedirs, remove
 from os.path import exists
 import time
 import os
@@ -31,23 +31,6 @@ MAX_THREADS_NATIVE = cpu_count()
 NUM_THREADS_FAASM = range(MIN_THREADS, MAX_THREADS_FAASM, 2)
 NUM_THREADS_NATIVE = range(MIN_THREADS, MAX_THREADS_NATIVE, 1)
 
-
-def write_csv_header(result_file):
-    with open(result_file, "w") as out_file:
-        out_file.write("Threads,Iteration,Actual,Reported\n")
-
-
-def write_result_line(result_file, threads, iteration, actual_ms, reported):
-    print("Writing result to {}".format(result_file))
-    with open(result_file, "a") as out_file:
-        result_line = "{},{},{},{}\n".format(
-            threads, iteration, actual_ms, reported
-        )
-
-        print("{} ({})".format(result_line, result_file))
-        out_file.write(result_line)
-
-
 # These are the parameters for the LULESH executable. See defaults at
 # https://github.com/LLNL/LULESH/blob/master/lulesh.cc#L2681
 # and translation from cmdline args at
@@ -61,15 +44,54 @@ COST = 1
 NUM_REPEATS = 3
 
 
+def init_result_file(file_name, clean):
+    result_file = join(RESULTS_DIR, file_name)
+
+    if not exists(RESULTS_DIR):
+        makedirs(RESULTS_DIR)
+
+    if exists(result_file) and clean:
+        remove(result_file)
+
+    if not exists(result_file):
+        with open(result_file, "w") as out_file:
+            out_file.write("Threads,Iteration,Actual,Reported\n")
+
+    return result_file
+
+
+def write_result_line(result_file, threads, iteration, actual_s, reported):
+    print("Writing result to {}".format(result_file))
+    with open(result_file, "a") as out_file:
+        result_line = "{},{},{},{}\n".format(
+            threads, iteration, actual_s, reported
+        )
+
+        print(result_line)
+        out_file.write(result_line)
+
+
+def get_reported_time(output_data):
+    if output_data.startswith("Run completed"):
+        # Parse to get reported
+        reported = output_data.split("Elapsed time         =")[1]
+        reported = reported.strip()
+        reported = reported.split(" ")[0]
+
+        return reported
+    else:
+        print("Unrecognised or failure response: {}".format(output_data))
+
+        return None
+
+
 @task
-def native(
-    ctx,
-    repeats=NUM_REPEATS,
-    threads=None,
-):
+def native(ctx, repeats=NUM_REPEATS, threads=None, clean=False):
     """
     Run LULESH natively
     """
+    result_file = init_result_file("lulesh_native.csv", clean)
+
     if threads:
         threads_list = [int(threads)]
     else:
@@ -108,25 +130,38 @@ def native(
 
             # Start timer and host stats collection
             start_time = time.time()
-            run(cmd_string, check=True, shell=True, env=env)
-
+            res = run(
+                cmd_string,
+                check=True,
+                shell=True,
+                env=env,
+                stdout=PIPE,
+                stderr=PIPE,
+            )
             end_time = time.time() - start_time
 
-            print("{} threads finished. Time {}".format(n_threads, end_time))
+            # Get the output
+            cmd_out = res.stdout.decode("utf-8")
+
+            reported = get_reported_time(cmd_out)
+
+            actual_s = end_time - start_time
+            write_result_line(
+                result_file, n_threads, run_idx, actual_s, reported
+            )
 
 
 @task
-def faasm(ctx, threads=None, repeats=NUM_REPEATS):
+def faasm(ctx, threads=None, repeats=NUM_REPEATS, clean=False):
     """
     Run LULESH experiment on Faasm
     """
+    result_file = init_result_file("lulesh_wasm.csv", clean)
+
     if threads:
         threads_list = [int(threads)]
     else:
         threads_list = NUM_THREADS_FAASM
-
-    if not exists(RESULTS_DIR):
-        makedirs(RESULTS_DIR)
 
     # Run experiments
     for n_threads in threads_list:
@@ -134,11 +169,6 @@ def faasm(ctx, threads=None, repeats=NUM_REPEATS):
 
         # Start with a flush
         faasm_flush()
-
-        result_file = join(RESULTS_DIR, "lulesh_wasm_{}.csv".format(n_threads))
-
-        if not exists(result_file):
-            write_csv_header(result_file)
 
         for run_idx in range(repeats):
             cmdline = [
@@ -162,22 +192,7 @@ def faasm(ctx, threads=None, repeats=NUM_REPEATS):
             }
 
             actual_s, output_data = invoke_and_await(WASM_USER, WASM_FUNC, msg)
-
-            if output_data.startswith("Run completed"):
-                # Parse to get reported
-                reported = output_data.split("Elapsed time         =")[1]
-                reported = reported.strip()
-                reported = reported.split(" ")[0]
-
-                print(
-                    "SUCCESS: reported {} actual {}s".format(
-                        reported, actual_s
-                    )
-                )
-            else:
-                print(
-                    "Unrecognised or failure response: {}".format(output_data)
-                )
+            reported = get_reported_time(output_data)
 
             # Write output
             write_result_line(

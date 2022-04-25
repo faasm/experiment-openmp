@@ -88,10 +88,11 @@ def invoke_and_await(user, func, msg, interval=2):
             headers=headers,
         )
 
-        print(response.text)
         if response.text.startswith("RUNNING"):
+            print(response.text)
             continue
         elif response.text.startswith("FAILED"):
+            print(response.text)
             raise RuntimeError("Call failed")
         elif not response.text:
             raise RuntimeError("Empty status response")

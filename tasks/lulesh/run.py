@@ -151,7 +151,7 @@ def native(ctx, repeats=NUM_REPEATS, threads=None, clean=False):
 
 
 @task
-def faasm(ctx, threads=None, repeats=NUM_REPEATS, clean=False):
+def faasm(ctx, threads=None, repeats=NUM_REPEATS, clean=False, resume=None):
     """
     Run LULESH experiment on Faasm
     """
@@ -159,6 +159,8 @@ def faasm(ctx, threads=None, repeats=NUM_REPEATS, clean=False):
 
     if threads:
         threads_list = [int(threads)]
+    if resume:
+        threads_list = [t for t in NUM_THREADS_FAASM if t >= int(resume)]
     else:
         threads_list = NUM_THREADS_FAASM
 
@@ -166,10 +168,10 @@ def faasm(ctx, threads=None, repeats=NUM_REPEATS, clean=False):
     for n_threads in threads_list:
         print("Running Lulesh with {} threads".format(n_threads))
 
-        # Start with a flush
-        faasm_flush()
-
         for run_idx in range(repeats):
+            # Start with a flush
+            faasm_flush()
+
             cmdline = [
                 "-i {}".format(ITERATIONS),
                 "-s {}".format(CUBE_SIZE),

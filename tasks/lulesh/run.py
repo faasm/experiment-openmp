@@ -72,7 +72,7 @@ def write_result_line(result_file, threads, iteration, actual_s, reported):
 
 
 def get_reported_time(output_data):
-    if output_data.startswith("Run completed"):
+    if "Run completed" in output_data:
         # Parse to get reported
         reported = output_data.split("Elapsed time         =")[1]
         reported = reported.strip()
@@ -138,14 +138,13 @@ def native(ctx, repeats=NUM_REPEATS, threads=None, clean=False):
                 stdout=PIPE,
                 stderr=PIPE,
             )
-            end_time = time.time() - start_time
+            actual_s = time.time() - start_time
 
             # Get the output
             cmd_out = res.stdout.decode("utf-8")
 
             reported = get_reported_time(cmd_out)
 
-            actual_s = end_time - start_time
             write_result_line(
                 result_file, n_threads, run_idx, actual_s, reported
             )

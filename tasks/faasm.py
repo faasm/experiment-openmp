@@ -98,8 +98,15 @@ def invoke_and_await(user, func, msg, interval=2):
 
         # Try to parse to json
         result_data = json.loads(response.text)
+
+        # Get Faasm reported time
+        start_ms = int(result_data["timestamp"])
+        end_ms = int(result_data["finished"])
+
+        actual_seconds = (end_ms - start_ms) / 1000.0
+
         output_data = result_data["output_data"]
-        return output_data
+        return actual_seconds, output_data
 
 
 def faasm_flush():

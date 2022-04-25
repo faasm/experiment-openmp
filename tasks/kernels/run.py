@@ -22,8 +22,15 @@ from tasks.faasm import (
     invoke_and_await,
 )
 
-# NUM_THREADS = [2, 4, 6, 8, 10, 12, 14, 16]
-NUM_THREADS = [2, 4, 6]
+MIN_THREADS = 2
+MAX_THREADS_FAASM = 32
+MAX_THREADS_NATIVE = 14
+
+THREADS_STEP = 2
+
+# Range is exclusive
+NUM_THREADS_FAASM = range(MIN_THREADS, MAX_THREADS_FAASM, THREADS_STEP)
+NUM_THREADS_NATIVE = range(MIN_THREADS, MAX_THREADS_NATIVE, THREADS_STEP)
 
 SPARSE_GRID_SIZE_2LOG = 10
 SPARSE_GRID_SIZE = pow(2, SPARSE_GRID_SIZE_2LOG)
@@ -74,7 +81,7 @@ def write_result_line(
 
 
 def process_result(
-    result_file, result_data, kernel, n_threads, run_num, measured_time
+    result_file, result_data, kernel, n_threads, run_num, actual_time_s
 ):
     stats = KERNELS_STATS.get(kernel)
     timing_stat = stats[0]
@@ -104,7 +111,7 @@ def process_result(
         reported_time = float(reported_time)
 
     write_result_line(
-        result_file, kernel, n_threads, run_num, measured_time, reported_time
+        result_file, kernel, n_threads, run_num, actual_time_s, reported_time
     )
 
 
@@ -128,7 +135,7 @@ def faasm(
     if threads:
         n_threads = [threads]
     else:
-        n_threads = NUM_THREADS
+        n_threads = NUM_THREADS_FAASM
 
     if kernel:
         kernels = [kernel]
@@ -153,16 +160,16 @@ def faasm(
                 }
 
                 # Make the call
-                start = time.time()
-                output_data = invoke_and_await(KERNELS_FAASM_USER, kernel, msg)
-                actual_time = time.time() - start
+                actual_s, output_data = invoke_and_await(
+                    KERNELS_FAASM_USER, kernel, msg
+                )
 
                 if verbose:
                     print(output_data)
 
                 # Write the result
                 process_result(
-                    result_file, output_data, kernel, nt, run_num, actual_time
+                    result_file, output_data, kernel, nt, run_num, actual_s
                 )
 
 
@@ -178,7 +185,7 @@ def native(
     if threads:
         n_threads = [threads]
     else:
-        n_threads = NUM_THREADS
+        n_threads = NUM_THREADS_NATIVE
 
     if kernel:
         kernels = [kernel]

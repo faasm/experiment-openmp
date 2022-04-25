@@ -31,11 +31,11 @@ def write_csv_header(result_file):
         out_file.write("Threads,Iteration,Actual,Reported\n")
 
 
-def write_result_line(result_file, threads, iteration, actual, reported):
+def write_result_line(result_file, threads, iteration, actual_ms, reported):
     print("Writing result to {}".format(result_file))
     with open(result_file, "a") as out_file:
         result_line = "{},{},{},{}\n".format(
-            threads, iteration, actual, reported
+            threads, iteration, actual_ms, reported
         )
         out_file.write(result_line)
 
@@ -156,12 +156,8 @@ def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
                 "async": True,
             }
 
-            # Start timer
-            start = time.time()
+            actual_s, output_data = invoke_and_await(WASM_USER, WASM_FUNC, msg)
 
-            output_data = invoke_and_await(WASM_USER, WASM_FUNC, msg)
-
-            actual_time = time.time() - start
             if output_data.startswith("Run completed"):
                 # Parse to get reported
                 reported = output_data.split("Elapsed time         =")[1]
@@ -169,8 +165,8 @@ def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
                 reported = reported.split(" ")[0]
 
                 print(
-                    "SUCCESS: reported {} actual {}".format(
-                        reported, actual_time
+                    "SUCCESS: reported {} actual {}s".format(
+                        reported, actual_s
                     )
                 )
                 break
@@ -182,5 +178,5 @@ def faasm(ctx, start=1, end=MAX_THREADS, repeats=2, step=3):
 
             # Write output
             write_result_line(
-                result_file, n_threads, run_idx, actual_time, reported
+                result_file, n_threads, run_idx, actual_s, reported
             )

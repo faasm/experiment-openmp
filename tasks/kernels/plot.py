@@ -16,6 +16,8 @@ from tasks.util import PLOTS_FORMAT, PLOTS_ROOT
 
 PLOT_KERNELS = list(KERNELS_CMDLINE.keys())
 
+SINGLE_HOST_LINE = 16
+
 PLOTS_DIR = join(PLOTS_ROOT, "lulesh")
 RUNTIME_PLOT_FILE = join(PLOTS_ROOT, "kernels_runtime.{}".format(PLOTS_FORMAT))
 
@@ -50,10 +52,19 @@ def _read_results(csv_file):
 
 
 @task(default=True)
-def plot(ctx, headless=False):
+def plot(ctx, headless=False, kernel=None):
     """
     Plot Kernels figure
     """
+    if kernel:
+        kernels = [kernel]
+        rows = 1
+        cols = 1
+    else:
+        kernels = PLOT_KERNELS
+        rows = 2
+        cols = -(-len(kernels) // 2)
+
     makedirs(PLOTS_DIR, exist_ok=True)
 
     # Load results
@@ -61,15 +72,13 @@ def plot(ctx, headless=False):
 
     wasm_kernels, wasm_results = _read_results(WASM_RESULT_FILE)
 
-    fig, ax = plt.subplots()
-    rows = 2
-    cols = -(-len(PLOT_KERNELS) // 2)
+    fig, _ = plt.subplots()
 
-    for i, kernel in enumerate(PLOT_KERNELS):
+    for i, kernel in enumerate(kernels):
         native_result = native_results.get(kernel, dict())
         wasm_result = wasm_results.get(kernel, dict())
 
-        plt.subplot(rows, cols, i + 1)
+        subax = plt.subplot(rows, cols, i + 1)
 
         plt.title(kernel)
 
@@ -97,7 +106,13 @@ def plot(ctx, headless=False):
 
             max_wasm_time = np.max(wasm_result["times"])
 
+        # Add single host marker line
+        plt.axvline(x=SINGLE_HOST_LINE, color="tab:red", linestyle="--")
+
         max_y = math.ceil(np.max([max_native_time, max_wasm_time]))
+
+        subax.set_ylabel("Time (s)")
+        subax.set_xlabel("CPU cores")
 
         plt.legend()
         plt.gca().set_ylim(0, max_y)

@@ -7,6 +7,9 @@ To set up locally, from the root of this project:
 
 ```bash
 ./bin/local_setup.sh
+
+# Refresh your shell
+bash
 ```
 
 ## Local dev setup
@@ -23,7 +26,10 @@ inv knative.ini-file --local
 
 ## Rebuilding the container
 
-You can rebuild the image with:
+You should only need to rebuild the container if you're adding an experiment or
+changing something related to compiling applications for Faasm.
+
+If you do need to, you can do so with:
 
 ```bash
 inv container

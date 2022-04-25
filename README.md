@@ -47,6 +47,8 @@ Runs [LULESH](https://github.com/LLNL/LULESH).
 ### Running natively
 
 ```bash
+./bin/cli.sh
+
 inv lulesh.build.native
 
 inv lulesh.run.native
@@ -55,10 +57,10 @@ inv lulesh.run.native
 ### Running on Faasm
 
 ```bash
-# Inside container
+./bin/cli.sh
+
 inv lulesh.build.wasm
 
-# Outside container
 inv lulesh.build.upload
 
 inv lulesh.run.faasm
@@ -71,6 +73,8 @@ Runs OpenMP kernels from [ParRes Kernels](https://github.com/ParRes/Kernels).
 ### Running natively
 
 ```bash
+./bin/cli.sh
+
 inv kernels.build.native
 
 inv kernels.run.native
@@ -79,10 +83,10 @@ inv kernels.run.native
 ### Running on Faasm
 
 ```bash
-# Inside container
+./bin/cli.sh
+
 inv kernels.build.wasm
 
-# Outside container
 inv kernels.build.upload
 
 inv kernels.run.faasm

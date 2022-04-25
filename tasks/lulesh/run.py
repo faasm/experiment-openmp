@@ -23,7 +23,13 @@ from tasks.lulesh.env import (
     WASM_USER,
 )
 
-MAX_THREADS = 32
+MIN_THREADS = 2
+MAX_THREADS_FAASM = 32
+MAX_THREADS_NATIVE = cpu_count()
+
+# Range is exclusive
+NUM_THREADS_FAASM = range(MIN_THREADS, MAX_THREADS_FAASM, 2)
+NUM_THREADS_NATIVE = range(MIN_THREADS, MAX_THREADS_NATIVE, 1)
 
 
 def write_csv_header(result_file):
@@ -52,7 +58,6 @@ REGIONS = 11
 BALANCE = 1
 COST = 1
 
-NUM_CORES = cpu_count()
 NUM_REPEATS = 3
 
 
@@ -61,8 +66,6 @@ def native(
     ctx,
     repeats=NUM_REPEATS,
     threads=None,
-    resume=1,
-    reverse=False,
 ):
     """
     Run LULESH natively
@@ -70,10 +73,7 @@ def native(
     if threads:
         threads_list = [int(threads)]
     else:
-        threads_list = list(range(int(resume), NUM_CORES + 1))
-
-    if reverse:
-        threads_list.reverse()
+        threads_list = NUM_THREADS_NATIVE
 
     print(
         "Running native LULESH with {} repeats on threads: {}".format(
@@ -116,11 +116,14 @@ def native(
 
 
 @task
-def faasm(ctx, start=2, end=MAX_THREADS, repeats=2, step=2):
+def faasm(ctx, threads=None, repeats=NUM_REPEATS):
     """
     Run LULESH experiment on Faasm
     """
-    threads_list = range(int(start), int(end), step)
+    if threads:
+        threads_list = [int(threads)]
+    else:
+        threads_list = NUM_THREADS_FAASM
 
     if not exists(RESULTS_DIR):
         makedirs(RESULTS_DIR)

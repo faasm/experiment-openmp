@@ -1,5 +1,6 @@
 from copy import copy
 import os
+from multiprocessing import cpu_count
 import time
 from os.path import exists, join
 from os import makedirs, remove
@@ -24,13 +25,11 @@ from tasks.faasm import (
 
 MIN_THREADS = 2
 MAX_THREADS_FAASM = 32
-MAX_THREADS_NATIVE = 14
-
-THREADS_STEP = 2
+MAX_THREADS_NATIVE = cpu_count()
 
 # Range is exclusive
-NUM_THREADS_FAASM = range(MIN_THREADS, MAX_THREADS_FAASM, THREADS_STEP)
-NUM_THREADS_NATIVE = range(MIN_THREADS, MAX_THREADS_NATIVE, THREADS_STEP)
+NUM_THREADS_FAASM = range(MIN_THREADS, MAX_THREADS_FAASM, 2)
+NUM_THREADS_NATIVE = range(MIN_THREADS, MAX_THREADS_NATIVE, 1)
 
 SPARSE_GRID_SIZE_2LOG = 10
 SPARSE_GRID_SIZE = pow(2, SPARSE_GRID_SIZE_2LOG)

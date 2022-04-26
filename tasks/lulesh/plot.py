@@ -17,7 +17,7 @@ SIMPLE_PLOT_FILE = join(PLOTS_DIR, "lulesh.png")
 WASM_RESULT_FILE = join(RESULTS_DIR, "lulesh_wasm.csv")
 NATIVE_RESULT_FILE = join(RESULTS_DIR, "lulesh_native.csv")
 
-SINGLE_HOST_LINE = 16
+SINGLE_HOST_LINE = 15
 
 
 def _read_results(result_file):
@@ -73,14 +73,13 @@ def plot(ctx, headless=False):
 
     plt.axvline(x=SINGLE_HOST_LINE, color="tab:red", linestyle="--")
 
-    # Prepare legend
-    ax.legend(["OpenMP", "Faabric"], loc="upper left")
-
     # Aesthetics
     ax.set_ylabel("Elapsed time (s)")
     ax.set_xlabel("# of parallel functions")
     ax.set_ylim(0)
     ax.set_xlim(0, 32)
+
+    plt.legend()
 
     fig.tight_layout()
 

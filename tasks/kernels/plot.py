@@ -84,6 +84,9 @@ def plot(ctx, headless=False, kernel=None):
 
         max_native_time = 0
         max_wasm_time = 0
+        max_natve_threads = 0
+        max_wasm_threads = 0
+
         if native_result:
             plt.errorbar(
                 x=native_result["threads"],
@@ -94,6 +97,7 @@ def plot(ctx, headless=False, kernel=None):
                 marker=".",
             )
 
+            max_native_threads = np.max(native_result["threads"])
             max_native_time = np.max(native_result["times"])
 
         if wasm_result:
@@ -106,10 +110,20 @@ def plot(ctx, headless=False, kernel=None):
                 marker=".",
             )
 
+            max_wasm_threads = np.max(wasm_result["threads"])
             max_wasm_time = np.max(wasm_result["times"])
 
-        # Add single host marker line
-        plt.axvline(x=SINGLE_HOST_LINE, color="tab:red", linestyle="--")
+        # Add single host marker lines
+        max_threads = np.max([max_native_threads, max_wasm_threads])
+        single_host_lines = [
+            SINGLE_HOST_LINE,
+            (2 * SINGLE_HOST_LINE) + 1,
+            (3 * SINGLE_HOST_LINE) + 2,
+        ]
+        single_host_lines = [s for s in single_host_lines if s <= max_threads]
+
+        for x in single_host_lines:
+            plt.axvline(x=x, color="tab:red", linestyle="--")
 
         max_y = math.ceil(np.max([max_native_time, max_wasm_time]))
 

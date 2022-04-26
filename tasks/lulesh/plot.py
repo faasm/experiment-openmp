@@ -9,73 +9,88 @@ import numpy as np
 
 from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PROJ_ROOT
 
-RESULTS_DIR = join(PROJ_ROOT, "results", "lulesh")
+RESULTS_DIR = join(PROJ_ROOT, "results")
 PLOTS_DIR = join(PLOTS_ROOT, "lulesh")
 RUNTIME_PLOT_FILE = join(PLOTS_DIR, "runtime.{}".format(PLOTS_FORMAT))
 SIMPLE_PLOT_FILE = join(PLOTS_DIR, "lulesh.png")
 
+WASM_RESULT_FILE = join(RESULTS_DIR, "lulesh_wasm.csv")
+NATIVE_RESULT_FILE = join(RESULTS_DIR, "lulesh_native.csv")
 
-def _read_results(mode):
-    result_dict = {}
+SINGLE_HOST_LINE = 16
 
-    for csv in glob(join(RESULTS_DIR, "lulesh_{}_*.csv".format(mode))):
-        results = pd.read_csv(csv)
 
-        num_thread = int(csv.split("_")[-1].split(".")[0])
+def _read_results(result_file):
 
-        if mode == "native":
-            result_dict[num_thread] = [
-                results["Time"].mean(),
-                results["Time"].sem(),
-            ]
-        else:
-            result_dict[num_thread] = [
-                results["Reported"].mean(),
-                results["Reported"].sem(),
-            ]
+    data = pd.read_csv(result_file)
+    by_thread = data.groupby(["Threads"])
 
-    return result_dict
+    threads = [int(t) for t in by_thread.groups.keys()]
+    times = by_thread.mean()["Actual"].values
+    errs = by_thread.std()["Actual"].values
+    errs = [np.nan_to_num(e) for e in errs]
+
+    results = {
+        "threads": threads,
+        "times": times,
+        "errs": errs,
+    }
+
+    return results
 
 
 @task(default=True)
-def plot(ctx):
+def plot(ctx, headless=False):
     """
     Plot LULESH figure
     """
     makedirs(PLOTS_DIR, exist_ok=True)
 
     # Load results
-    native_results = _read_results("native")
-    wasm_results = _read_results("wasm")
+    native_result = _read_results(NATIVE_RESULT_FILE)
+    wasm_result = _read_results(WASM_RESULT_FILE)
 
     fig, ax = plt.subplots()
 
     # Plot results - native
-    x = list(native_results.keys())
-    x.sort()
-    y = [native_results[xs][0] for xs in x]
-    yerr = [native_results[xs][1] for xs in x]
-    ax.errorbar(x, y, yerr=yerr, fmt=".-")
+    plt.errorbar(
+        x=native_result["threads"],
+        y=native_result["times"],
+        yerr=native_result["errs"],
+        color="tab:blue",
+        label="OpenMP",
+        marker=".",
+    )
 
-    # Plot results - wasm
-    x_wasm = list(wasm_results.keys())
-    x_wasm.sort()
-    y_wasm = [wasm_results[xs][0] for xs in x_wasm]
-    yerr_wasm = [wasm_results[xs][1] for xs in x_wasm]
-    ax.errorbar(x_wasm, y_wasm, yerr=yerr_wasm, fmt=".-")
+    plt.errorbar(
+        x=wasm_result["threads"],
+        y=wasm_result["times"],
+        yerr=wasm_result["errs"],
+        color="tab:orange",
+        label="Faasm",
+        marker=".",
+    )
+
+    plt.axvline(x=SINGLE_HOST_LINE, color="tab:red", linestyle="--")
 
     # Prepare legend
     ax.legend(["OpenMP", "Faabric"], loc="upper left")
 
     # Aesthetics
-    ax.set_ylabel("Elapsed time [s]")
+    ax.set_ylabel("Elapsed time (s)")
     ax.set_xlabel("# of parallel functions")
     ax.set_ylim(0)
-    ax.set_xlim(0, 30)
+    ax.set_xlim(0, 32)
 
     fig.tight_layout()
-    plt.gca().set_aspect(0.1)
-    plt.savefig(RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight")
+
+    if headless:
+        plt.gca().set_aspect(0.1)
+        plt.savefig(
+            RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight"
+        )
+    else:
+        plt.show()
 
 
 @task

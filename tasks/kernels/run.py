@@ -1,5 +1,6 @@
 from copy import copy
 import os
+from multiprocessing import cpu_count
 import time
 from os.path import exists, join
 from os import makedirs, remove
@@ -22,8 +23,13 @@ from tasks.faasm import (
     invoke_and_await,
 )
 
-# NUM_THREADS = [2, 4, 6, 8, 10, 12, 14, 16]
-NUM_THREADS = [2, 4, 6]
+MIN_THREADS = 2
+MAX_THREADS_FAASM = 32
+MAX_THREADS_NATIVE = cpu_count()
+
+# Range is exclusive
+NUM_THREADS_FAASM = range(MIN_THREADS, MAX_THREADS_FAASM, 2)
+NUM_THREADS_NATIVE = range(MIN_THREADS, MAX_THREADS_NATIVE, 1)
 
 SPARSE_GRID_SIZE_2LOG = 10
 SPARSE_GRID_SIZE = pow(2, SPARSE_GRID_SIZE_2LOG)
@@ -74,7 +80,7 @@ def write_result_line(
 
 
 def process_result(
-    result_file, result_data, kernel, n_threads, run_num, measured_time
+    result_file, result_data, kernel, n_threads, run_num, actual_time_s
 ):
     stats = KERNELS_STATS.get(kernel)
     timing_stat = stats[0]
@@ -87,20 +93,24 @@ def process_result(
                 timing_stat, kernel
             )
         )
-        return
+        reported_time = 0
+    else:
+        # Use colon to get the second part
+        reported_time = stat_parts[-1].replace(":", "")
+        reported_time = [
+            s.strip() for s in reported_time.split(" ") if s.strip()
+        ]
+        reported_time = reported_time[0]
 
-    # Use colon to get the second part
-    reported_time = stat_parts[-1].replace(":", "")
-    reported_time = [s.strip() for s in reported_time.split(" ") if s.strip()]
-    reported_time = reported_time[0]
-
-    # Guard against the number being followed by a newline
-    reported_time = [s.strip() for s in reported_time.split("\n") if s.strip()]
-    reported_time = reported_time[0]
-    reported_time = float(reported_time)
+        # Guard against the number being followed by a newline
+        reported_time = [
+            s.strip() for s in reported_time.split("\n") if s.strip()
+        ]
+        reported_time = reported_time[0]
+        reported_time = float(reported_time)
 
     write_result_line(
-        result_file, kernel, n_threads, run_num, measured_time, reported_time
+        result_file, kernel, n_threads, run_num, actual_time_s, reported_time
     )
 
 
@@ -124,7 +134,7 @@ def faasm(
     if threads:
         n_threads = [threads]
     else:
-        n_threads = NUM_THREADS
+        n_threads = NUM_THREADS_FAASM
 
     if kernel:
         kernels = [kernel]
@@ -149,16 +159,16 @@ def faasm(
                 }
 
                 # Make the call
-                start = time.time()
-                output_data = invoke_and_await(KERNELS_FAASM_USER, kernel, msg)
-                actual_time = time.time() - start
+                actual_s, output_data = invoke_and_await(
+                    KERNELS_FAASM_USER, kernel, msg
+                )
 
                 if verbose:
                     print(output_data)
 
                 # Write the result
                 process_result(
-                    result_file, output_data, kernel, nt, run_num, actual_time
+                    result_file, output_data, kernel, nt, run_num, actual_s
                 )
 
 
@@ -174,7 +184,7 @@ def native(
     if threads:
         n_threads = [threads]
     else:
-        n_threads = NUM_THREADS
+        n_threads = NUM_THREADS_NATIVE
 
     if kernel:
         kernels = [kernel]

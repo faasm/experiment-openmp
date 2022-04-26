@@ -88,18 +88,26 @@ def invoke_and_await(user, func, msg, interval=2):
             headers=headers,
         )
 
-        print(response.text)
         if response.text.startswith("RUNNING"):
+            print(response.text)
             continue
         elif response.text.startswith("FAILED"):
+            print(response.text)
             raise RuntimeError("Call failed")
         elif not response.text:
             raise RuntimeError("Empty status response")
 
         # Try to parse to json
         result_data = json.loads(response.text)
+
+        # Get Faasm reported time
+        start_ms = int(result_data["timestamp"])
+        end_ms = int(result_data["finished"])
+
+        actual_seconds = (end_ms - start_ms) / 1000.0
+
         output_data = result_data["output_data"]
-        return output_data
+        return actual_seconds, output_data
 
 
 def faasm_flush():

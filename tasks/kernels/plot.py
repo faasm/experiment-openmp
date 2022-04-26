@@ -16,7 +16,7 @@ from tasks.util import PLOTS_FORMAT, PLOTS_ROOT
 
 PLOT_KERNELS = list(KERNELS_CMDLINE.keys())
 
-SINGLE_HOST_LINE = 16
+SINGLE_HOST_LINE = 15
 
 PLOTS_DIR = join(PLOTS_ROOT, "lulesh")
 RUNTIME_PLOT_FILE = join(PLOTS_ROOT, "kernels_runtime.{}".format(PLOTS_FORMAT))

@@ -32,8 +32,8 @@ KERNELS_NON_WASM = ["pic", "global", "random", "reduce", "transpose", "p2p"]
 # See PRK CI scripts for example arguments:
 # https://github.com/ParRes/Kernels/blob/default/ci/build-run-prk.sh
 KERNELS_CMDLINE = {
-    # dgemm: iterations, matrix order
-    "dgemm": [10, 1400, 32],
+    # dgemm: iterations, matrix order, tile size
+    "dgemm": [10, 2048, 32],
     # global: iterations, scramble string length
     "global": [10, 100000],
     # nstream: iterations, vector length, offset

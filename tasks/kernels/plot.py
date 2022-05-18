@@ -12,13 +12,17 @@ from tasks.kernels.env import (
     NATIVE_RESULT_FILE,
     KERNELS_CMDLINE,
 )
-from tasks.util import PLOTS_FORMAT, PLOTS_ROOT
+from tasks.util import (
+    MPL_STYLE_FILE,
+    PLOTS_FORMAT,
+    PLOTS_ROOT,
+    PLOTS_MAX_THREADS,
+)
 
 PLOT_KERNELS = list(KERNELS_CMDLINE.keys())
 
 SINGLE_HOST_LINE = 15
 
-PLOTS_DIR = join(PLOTS_ROOT, "lulesh")
 RUNTIME_PLOT_FILE = join(PLOTS_ROOT, "kernels_runtime.{}".format(PLOTS_FORMAT))
 
 
@@ -56,6 +60,9 @@ def plot(ctx, headless=False, kernel=None):
     """
     Plot Kernels figure
     """
+    # Use our matplotlib style file
+    plt.style.use(MPL_STYLE_FILE)
+
     if kernel:
         kernels = [kernel]
         rows = 1
@@ -65,14 +72,12 @@ def plot(ctx, headless=False, kernel=None):
         rows = 2
         cols = -(-len(kernels) // 2)
 
-    makedirs(PLOTS_DIR, exist_ok=True)
-
     # Load results
     native_kernels, native_results = _read_results(NATIVE_RESULT_FILE)
 
     wasm_kernels, wasm_results = _read_results(WASM_RESULT_FILE)
 
-    fig, _ = plt.subplots()
+    fig = plt.figure(figsize=(5, 2))
 
     for i, kernel in enumerate(kernels):
         native_result = native_results.get(kernel, dict())
@@ -80,38 +85,35 @@ def plot(ctx, headless=False, kernel=None):
 
         subax = plt.subplot(rows, cols, i + 1)
 
-        plt.title(kernel)
+        if len(kernels) > 1:
+            plt.title(kernel)
 
         max_native_time = 0
         max_wasm_time = 0
         max_natve_threads = 0
         max_wasm_threads = 0
 
-        if native_result:
-            plt.errorbar(
-                x=native_result["threads"],
-                y=native_result["times"],
-                yerr=native_result["errs"],
-                color="tab:blue",
-                label="Native",
-                marker=".",
-            )
-
-            max_native_threads = np.max(native_result["threads"])
-            max_native_time = np.max(native_result["times"])
-
         if wasm_result:
             plt.errorbar(
                 x=wasm_result["threads"],
                 y=wasm_result["times"],
                 yerr=wasm_result["errs"],
-                color="tab:orange",
-                label="Faasm",
-                marker=".",
+                label="Granny",
             )
 
             max_wasm_threads = np.max(wasm_result["threads"])
             max_wasm_time = np.max(wasm_result["times"])
+
+        if native_result:
+            plt.errorbar(
+                x=native_result["threads"],
+                y=native_result["times"],
+                yerr=native_result["errs"],
+                label="OpenMP",
+            )
+
+            max_native_threads = np.max(native_result["threads"])
+            max_native_time = np.max(native_result["times"])
 
         # Add single host marker lines
         max_threads = np.max([max_native_threads, max_wasm_threads])
@@ -128,14 +130,16 @@ def plot(ctx, headless=False, kernel=None):
         max_y = math.ceil(np.max([max_native_time, max_wasm_time]))
 
         subax.set_ylabel("Time (s)")
-        subax.set_xlabel("CPU cores")
+        subax.set_xlabel("# threads")
 
         plt.legend()
         plt.gca().set_ylim(0, max_y)
+        plt.gca().set_xlim(0, PLOTS_MAX_THREADS)
 
     fig.tight_layout()
 
     if headless:
+        print("Saving plot to {}".format(RUNTIME_PLOT_FILE))
         plt.savefig(
             RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight"
         )

@@ -49,7 +49,7 @@ def plot(ctx, headless=False):
     native_result = _read_results(NATIVE_RESULT_FILE)
     wasm_result = _read_results(WASM_RESULT_FILE)
 
-    fig, ax = plt.subplots()
+    fig = plt.figure(figsize=(5,2))
 
     # Plot results - native
     plt.errorbar(
@@ -66,7 +66,7 @@ def plot(ctx, headless=False):
         y=wasm_result["times"],
         yerr=wasm_result["errs"],
         color="tab:orange",
-        label="Faasm",
+        label="Granny",
         marker=".",
     )
 
@@ -74,8 +74,9 @@ def plot(ctx, headless=False):
     plt.axvline(x=2 * SINGLE_HOST_LINE, color="tab:red", linestyle="--")
 
     # Aesthetics
-    ax.set_ylabel("Elapsed time (s)")
-    ax.set_xlabel("# of parallel functions")
+    ax = plt.gca()
+    ax.set_ylabel("Time (s)")
+    ax.set_xlabel("# threads")
     ax.set_ylim(0)
     ax.set_xlim(0, PLOTS_MAX_THREADS)
 

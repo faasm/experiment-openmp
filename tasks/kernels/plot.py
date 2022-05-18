@@ -18,7 +18,6 @@ PLOT_KERNELS = list(KERNELS_CMDLINE.keys())
 
 SINGLE_HOST_LINE = 15
 
-PLOTS_DIR = join(PLOTS_ROOT, "lulesh")
 RUNTIME_PLOT_FILE = join(PLOTS_ROOT, "kernels_runtime.{}".format(PLOTS_FORMAT))
 
 
@@ -65,14 +64,12 @@ def plot(ctx, headless=False, kernel=None):
         rows = 2
         cols = -(-len(kernels) // 2)
 
-    makedirs(PLOTS_DIR, exist_ok=True)
-
     # Load results
     native_kernels, native_results = _read_results(NATIVE_RESULT_FILE)
 
     wasm_kernels, wasm_results = _read_results(WASM_RESULT_FILE)
 
-    fig, _ = plt.subplots()
+    fig = plt.figure(figsize=(5,2))
 
     for i, kernel in enumerate(kernels):
         native_result = native_results.get(kernel, dict())
@@ -80,7 +77,8 @@ def plot(ctx, headless=False, kernel=None):
 
         subax = plt.subplot(rows, cols, i + 1)
 
-        plt.title(kernel)
+        if len(kernels) > 1:
+            plt.title(kernel)
 
         max_native_time = 0
         max_wasm_time = 0
@@ -93,7 +91,7 @@ def plot(ctx, headless=False, kernel=None):
                 y=native_result["times"],
                 yerr=native_result["errs"],
                 color="tab:blue",
-                label="Native",
+                label="OpenMP",
                 marker=".",
             )
 
@@ -106,7 +104,7 @@ def plot(ctx, headless=False, kernel=None):
                 y=wasm_result["times"],
                 yerr=wasm_result["errs"],
                 color="tab:orange",
-                label="Faasm",
+                label="Granny",
                 marker=".",
             )
 
@@ -128,7 +126,7 @@ def plot(ctx, headless=False, kernel=None):
         max_y = math.ceil(np.max([max_native_time, max_wasm_time]))
 
         subax.set_ylabel("Time (s)")
-        subax.set_xlabel("CPU cores")
+        subax.set_xlabel("# threads")
 
         plt.legend()
         plt.gca().set_ylim(0, max_y)

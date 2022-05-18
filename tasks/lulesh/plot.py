@@ -7,12 +7,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PROJ_ROOT
+from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PROJ_ROOT, PLOTS_MAX_THREADS
 
 RESULTS_DIR = join(PROJ_ROOT, "results")
-PLOTS_DIR = join(PLOTS_ROOT, "lulesh")
-RUNTIME_PLOT_FILE = join(PLOTS_DIR, "runtime.{}".format(PLOTS_FORMAT))
-SIMPLE_PLOT_FILE = join(PLOTS_DIR, "lulesh.png")
+RUNTIME_PLOT_FILE = join(PLOTS_ROOT, "lulesh_runtime.{}".format(PLOTS_FORMAT))
+SIMPLE_PLOT_FILE = join(PLOTS_ROOT, "lulesh.png")
 
 WASM_RESULT_FILE = join(RESULTS_DIR, "lulesh_wasm.csv")
 NATIVE_RESULT_FILE = join(RESULTS_DIR, "lulesh_native.csv")
@@ -44,7 +43,7 @@ def plot(ctx, headless=False):
     """
     Plot LULESH figure
     """
-    makedirs(PLOTS_DIR, exist_ok=True)
+    makedirs(PLOTS_ROOT, exist_ok=True)
 
     # Load results
     native_result = _read_results(NATIVE_RESULT_FILE)
@@ -72,12 +71,13 @@ def plot(ctx, headless=False):
     )
 
     plt.axvline(x=SINGLE_HOST_LINE, color="tab:red", linestyle="--")
+    plt.axvline(x=2 * SINGLE_HOST_LINE, color="tab:red", linestyle="--")
 
     # Aesthetics
     ax.set_ylabel("Elapsed time (s)")
     ax.set_xlabel("# of parallel functions")
     ax.set_ylim(0)
-    ax.set_xlim(0, 32)
+    ax.set_xlim(0, PLOTS_MAX_THREADS)
 
     plt.legend()
 
@@ -85,6 +85,7 @@ def plot(ctx, headless=False):
 
     if headless:
         plt.gca().set_aspect(0.1)
+        print("Saving plot to {}".format(RUNTIME_PLOT_FILE))
         plt.savefig(
             RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight"
         )
@@ -97,8 +98,8 @@ def simple(ctx, headless=False):
     """
     Simple LULESH runtime plot
     """
-    if not exists(PLOTS_DIR):
-        makedirs(PLOTS_DIR)
+    if not exists(PLOTS_ROOT):
+        makedirs(PLOTS_ROOT)
 
     filenames = listdir(RESULTS_DIR)
     filenames.sort()

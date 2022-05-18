@@ -19,11 +19,10 @@ WASM_BUILD_DIR = join(PROJ_ROOT, "build", "wasm")
 PLOTS_ROOT = join(PROJ_ROOT, "plots")
 PLOTS_FORMAT = "pdf"
 
+PLOTS_MAX_THREADS = 44
+
 FAASM_LOCAL_DIR = "/usr/local/faasm"
 FAASM_WASM_DIR = join(FAASM_LOCAL_DIR, "wasm")
-
-FAASM_USER = "cov"
-FAASM_FUNC = "sim"
 
 IS_DOCKER = HOME_DIR.startswith("/root")
 

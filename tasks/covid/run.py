@@ -20,9 +20,10 @@ from tasks.util import (
     RESULTS_DIR,
     COVID_DIR,
     NATIVE_BUILD_DIR,
-    FAASM_USER,
-    FAASM_FUNC,
 )
+
+FAASM_USER = "cov"
+FAASM_FUNC = "sim"
 
 COVID_SIM_EXE = join(NATIVE_BUILD_DIR, "src", "CovidSim")
 DATA_DIR = join(COVID_DIR, "data")

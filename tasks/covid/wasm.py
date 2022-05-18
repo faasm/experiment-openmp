@@ -10,10 +10,11 @@ from tasks.util import (
     COVID_DIR,
     CMAKE_TOOLCHAIN_FILE,
     WASM_BUILD_DIR,
-    FAASM_USER,
-    FAASM_FUNC,
     FAASM_WASM_DIR,
 )
+
+FAASM_USER = "cov"
+FAASM_FUNC = "sim"
 
 
 @task(default=True)

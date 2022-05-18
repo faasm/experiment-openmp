@@ -12,7 +12,7 @@ from tasks.kernels.env import (
     NATIVE_RESULT_FILE,
     KERNELS_CMDLINE,
 )
-from tasks.util import PLOTS_FORMAT, PLOTS_ROOT
+from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PLOTS_MAX_THREADS
 
 PLOT_KERNELS = list(KERNELS_CMDLINE.keys())
 
@@ -132,10 +132,12 @@ def plot(ctx, headless=False, kernel=None):
 
         plt.legend()
         plt.gca().set_ylim(0, max_y)
+        plt.gca().set_xlim(0, PLOTS_MAX_THREADS)
 
     fig.tight_layout()
 
     if headless:
+        print("Saving plot to {}".format(RUNTIME_PLOT_FILE))
         plt.savefig(
             RUNTIME_PLOT_FILE, format=PLOTS_FORMAT, bbox_inches="tight"
         )

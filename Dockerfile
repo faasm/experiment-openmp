@@ -3,7 +3,6 @@ FROM faasm/cpp-sysroot:0.2.0
 # Clone the code
 RUN git clone https://github.com/faasm/experiment-openmp /code/experiment-openmp
 WORKDIR /code/experiment-openmp
-RUN git checkout azure-260422
 RUN git submodule update --init
 
 # Install python deps

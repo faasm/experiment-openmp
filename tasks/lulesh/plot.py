@@ -7,7 +7,13 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PROJ_ROOT, PLOTS_MAX_THREADS
+from tasks.util import (
+    MPL_STYLE_FILE,
+    PLOTS_FORMAT,
+    PLOTS_ROOT,
+    PROJ_ROOT,
+    PLOTS_MAX_THREADS,
+)
 
 RESULTS_DIR = join(PROJ_ROOT, "results")
 RUNTIME_PLOT_FILE = join(PLOTS_ROOT, "lulesh_runtime.{}".format(PLOTS_FORMAT))
@@ -43,31 +49,31 @@ def plot(ctx, headless=False):
     """
     Plot LULESH figure
     """
+    # Use our matplotlib style file
+    plt.style.use(MPL_STYLE_FILE)
+
     makedirs(PLOTS_ROOT, exist_ok=True)
 
     # Load results
     native_result = _read_results(NATIVE_RESULT_FILE)
     wasm_result = _read_results(WASM_RESULT_FILE)
 
-    fig = plt.figure(figsize=(5,2))
+    fig = plt.figure(figsize=(5, 2))
+
+    # Plot Granny results
+    plt.errorbar(
+        x=wasm_result["threads"],
+        y=wasm_result["times"],
+        yerr=wasm_result["errs"],
+        label="Granny",
+    )
 
     # Plot results - native
     plt.errorbar(
         x=native_result["threads"],
         y=native_result["times"],
         yerr=native_result["errs"],
-        color="tab:blue",
         label="OpenMP",
-        marker=".",
-    )
-
-    plt.errorbar(
-        x=wasm_result["threads"],
-        y=wasm_result["times"],
-        yerr=wasm_result["errs"],
-        color="tab:orange",
-        label="Granny",
-        marker=".",
     )
 
     plt.axvline(x=SINGLE_HOST_LINE, color="tab:red", linestyle="--")

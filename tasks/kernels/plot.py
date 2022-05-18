@@ -12,7 +12,12 @@ from tasks.kernels.env import (
     NATIVE_RESULT_FILE,
     KERNELS_CMDLINE,
 )
-from tasks.util import PLOTS_FORMAT, PLOTS_ROOT, PLOTS_MAX_THREADS
+from tasks.util import (
+    MPL_STYLE_FILE,
+    PLOTS_FORMAT,
+    PLOTS_ROOT,
+    PLOTS_MAX_THREADS,
+)
 
 PLOT_KERNELS = list(KERNELS_CMDLINE.keys())
 
@@ -55,6 +60,9 @@ def plot(ctx, headless=False, kernel=None):
     """
     Plot Kernels figure
     """
+    # Use our matplotlib style file
+    plt.style.use(MPL_STYLE_FILE)
+
     if kernel:
         kernels = [kernel]
         rows = 1
@@ -69,7 +77,7 @@ def plot(ctx, headless=False, kernel=None):
 
     wasm_kernels, wasm_results = _read_results(WASM_RESULT_FILE)
 
-    fig = plt.figure(figsize=(5,2))
+    fig = plt.figure(figsize=(5, 2))
 
     for i, kernel in enumerate(kernels):
         native_result = native_results.get(kernel, dict())
@@ -85,31 +93,27 @@ def plot(ctx, headless=False, kernel=None):
         max_natve_threads = 0
         max_wasm_threads = 0
 
-        if native_result:
-            plt.errorbar(
-                x=native_result["threads"],
-                y=native_result["times"],
-                yerr=native_result["errs"],
-                color="tab:blue",
-                label="OpenMP",
-                marker=".",
-            )
-
-            max_native_threads = np.max(native_result["threads"])
-            max_native_time = np.max(native_result["times"])
-
         if wasm_result:
             plt.errorbar(
                 x=wasm_result["threads"],
                 y=wasm_result["times"],
                 yerr=wasm_result["errs"],
-                color="tab:orange",
                 label="Granny",
-                marker=".",
             )
 
             max_wasm_threads = np.max(wasm_result["threads"])
             max_wasm_time = np.max(wasm_result["times"])
+
+        if native_result:
+            plt.errorbar(
+                x=native_result["threads"],
+                y=native_result["times"],
+                yerr=native_result["errs"],
+                label="OpenMP",
+            )
+
+            max_native_threads = np.max(native_result["threads"])
+            max_native_time = np.max(native_result["times"])
 
         # Add single host marker lines
         max_threads = np.max([max_native_threads, max_wasm_threads])

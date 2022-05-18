@@ -28,6 +28,8 @@ IS_DOCKER = HOME_DIR.startswith("/root")
 
 RESULTS_DIR = join(PROJ_ROOT, "results")
 
+MPL_STYLE_FILE = join(PROJ_ROOT, "faasm.mplstyle")
+
 
 def get_version():
     ver_file = join(PROJ_ROOT, "VERSION")

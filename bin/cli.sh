@@ -20,9 +20,15 @@ fi
 
 INNER_SHELL=${SHELL:-"/bin/bash"}
 
+# Run in background
 docker-compose \
-    run \
-    --rm \
+    up \
+    --no-recreate \
+    -d \
+    openmp-cli
+
+docker-compose \
+    exec \
     openmp-cli \
     ${INNER_SHELL}
 

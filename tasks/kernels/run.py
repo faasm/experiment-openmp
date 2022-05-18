@@ -24,7 +24,7 @@ from tasks.faasm import (
 )
 
 MIN_THREADS = 2
-MAX_THREADS_FAASM = 32
+MAX_THREADS_FAASM = 45
 MAX_THREADS_NATIVE = cpu_count()
 
 # Range is exclusive
@@ -124,7 +124,13 @@ def flush(ctx):
 
 @task
 def faasm(
-    ctx, repeats=1, threads=None, kernel=None, verbose=False, clean=False
+    ctx,
+    repeats=1,
+    threads=None,
+    kernel=None,
+    verbose=False,
+    clean=False,
+    resume=None,
 ):
     """
     Run kernel(s) in Faasm
@@ -133,6 +139,8 @@ def faasm(
 
     if threads:
         n_threads = [threads]
+    if resume:
+        n_threads = [t for t in NUM_THREADS_FAASM if t >= int(resume)]
     else:
         n_threads = NUM_THREADS_FAASM
 

@@ -8,8 +8,7 @@ To set up locally, from the root of this project:
 ```bash
 ./bin/local_setup.sh
 
-# Refresh your shell
-bash
+# Log out and log in again for permissions
 ```
 
 ## Local dev setup

@@ -46,14 +46,8 @@ def get_faasm_worker_pods():
     return pods
 
 
-def get_knative_headers():
-    knative_host = get_faasm_ini_value("Faasm", "knative_host")
-    return {"Host": knative_host}
-
-
 def invoke_and_await(user, func, msg, interval=2):
     host, port = get_faasm_invoke_host_port()
-    headers = get_knative_headers()
     url = "http://{}:{}".format(host, port)
 
     # Invoke
@@ -112,13 +106,10 @@ def invoke_and_await(user, func, msg, interval=2):
 
 def faasm_flush():
     host, port = get_faasm_invoke_host_port()
-    knative_headers = get_knative_headers()
     url = "http://{}:{}".format(host, port)
 
     msg = {"type": MESSAGE_TYPE_FLUSH}
-    response = requests.post(
-        url, json=msg, headers=knative_headers, timeout=None
-    )
+    response = requests.post(url, json=msg, timeout=None)
     if response.status_code != 200:
         print(
             "Flush request failed: {}:\n{}".format(

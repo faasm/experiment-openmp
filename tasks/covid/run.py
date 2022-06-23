@@ -13,7 +13,6 @@ from tasks.faasm import (
     get_faasm_worker_pods,
     get_faasm_invoke_host_port,
     get_faasm_upload_host_port,
-    get_knative_headers,
 )
 
 from tasks.util import (
@@ -223,7 +222,6 @@ def faasm(
             print("Posting to {}".format(url))
             pprint.pprint(msg)
 
-            headers = get_knative_headers()
             response = requests.post(url, json=msg, headers=headers)
 
             if response.status_code != 200:

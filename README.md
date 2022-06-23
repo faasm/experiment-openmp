@@ -20,7 +20,7 @@ Make sure your local `faasm.ini` file is then updated to run locally:
 
 ```bash
 # In faasm-cli
-inv knative.ini-file --local
+inv k8s.ini-file --local
 ```
 
 ## Rebuilding the container
